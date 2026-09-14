@@ -1,20 +1,21 @@
 from __future__ import annotations
 
 import pathlib
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.config import settings
 from backend.app.storage.db import db
-from backend.app.api import health, vulnerabilities
+from backend.app.api import health, vulnerabilities, targets, scans, recon
 
-from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ensure database schema is initialized on startup
     db.init_db()
     yield
+
 
 app = FastAPI(
     title="AI-Pentest Copilot API",
@@ -35,6 +36,9 @@ app.add_middleware(
 # Register Routers
 app.include_router(health.router, prefix=settings.API_V1_STR)
 app.include_router(vulnerabilities.router, prefix=settings.API_V1_STR)
+app.include_router(targets.router, prefix=settings.API_V1_STR)
+app.include_router(scans.router, prefix=settings.API_V1_STR)
+app.include_router(recon.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")
