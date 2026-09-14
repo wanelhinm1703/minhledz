@@ -1,4 +1,4 @@
-"""LLM Service with multi-provider abstraction, streaming, and offline fallback."""
+"""Enhanced LLM Service with multi-provider abstraction, streaming via httpx, and rich offline security reasoning."""
 
 from __future__ import annotations
 
@@ -6,7 +6,10 @@ import os
 import re
 import json
 import asyncio
+import pathlib
 from typing import AsyncGenerator, Dict, Any, List, Optional
+import httpx
+
 from backend.app.core.guardrails import check_exploit_intent, format_guardrail_refusal
 from backend.app.core.prompts import SYSTEM_PROMPT
 
@@ -34,13 +37,13 @@ class LLMService:
         return [
             {
                 "id": "offline",
-                "name": "Local Security Reasoning (Offline/Simulated)",
+                "name": "Local Security Reasoning (Offline/Internal)",
                 "active": self.active_provider == "offline",
                 "ready": True,
             },
             {
                 "id": "openai",
-                "name": "OpenAI (GPT-4o / o1)",
+                "name": "OpenAI (GPT-4o / GPT-4o-mini)",
                 "active": self.active_provider == "openai",
                 "ready": bool(os.getenv("OPENAI_API_KEY")),
             },
@@ -71,6 +74,10 @@ class LLMService:
         self.active_provider = provider_id
         if model:
             self.active_model = model
+        elif provider_id == "openai":
+            self.active_model = os.getenv("LLM_MODEL", "gpt-4o-mini")
+        elif provider_id == "ollama":
+            self.active_model = os.getenv("LLM_MODEL", "llama3")
         return True
 
     async def stream_response(
@@ -94,43 +101,77 @@ class LLMService:
                 yield chunk
         else:
             try:
-                async for chunk in self._stream_litellm(prompt, system_prompt, context_data):
+                async for chunk in self._stream_external_llm(prompt, system_prompt, context_data):
                     yield chunk
             except Exception as e:
-                # Fallback to offline on external API failure
-                yield f"\n*[Provider error: {e}. Falling back to Local Security Engine]*\n\n"
+                yield f"\n*[Provider error: {e}. Chuyển sang chế độ Local Security Engine]*\n\n"
                 async for chunk in self._stream_offline(prompt, context_data):
                     yield chunk
 
-    async def _stream_litellm(
+    async def _stream_external_llm(
         self, prompt: str, system_prompt: str, context_data: Optional[Dict[str, Any]]
     ) -> AsyncGenerator[str, None]:
-        try:
-            import litellm
-            messages = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt},
-            ]
-            response = await litellm.acompletion(
-                model=self.active_model,
-                messages=messages,
-                stream=True,
-            )
-            async for part in response:
-                delta = part.choices[0].delta.content or ""
-                if delta:
-                    yield delta
-        except ImportError:
+        """Stream from OpenAI, Ollama, or custom OpenAI-compatible endpoints using native httpx."""
+        if self.active_provider == "openai":
+            api_key = os.getenv("OPENAI_API_KEY", "")
+            base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+            model = self.active_model if self.active_model != "offline-security-copilot" else "gpt-4o-mini"
+        elif self.active_provider == "ollama":
+            api_key = "ollama"
+            ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+            base_url = f"{ollama_host.rstrip('/')}/v1"
+            model = self.active_model if self.active_model != "offline-security-copilot" else "llama3"
+        elif self.active_provider == "custom":
+            api_key = os.getenv("CUSTOM_LLM_KEY", "custom")
+            base_url = os.getenv("CUSTOM_LLM_URL", "http://localhost:8080/v1")
+            model = self.active_model
+        else:
             async for chunk in self._stream_offline(prompt, context_data):
                 yield chunk
+            return
+
+        endpoint = f"{base_url.rstrip('/')}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+        body = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ],
+            "stream": True,
+            "temperature": 0.2,
+        }
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            async with client.stream("POST", endpoint, headers=headers, json=body) as response:
+                if response.status_code != 200:
+                    err_text = await response.aread()
+                    raise RuntimeError(f"HTTP {response.status_code}: {err_text.decode('utf-8', errors='ignore')[:200]}")
+
+                async for line in response.aiter_lines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if line.startswith("data: "):
+                        data_str = line[6:].strip()
+                        if data_str == "[DONE]":
+                            break
+                        try:
+                            parsed = json.loads(data_str)
+                            delta = parsed.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                            if delta:
+                                yield delta
+                        except Exception:
+                            continue
 
     async def _stream_offline(
         self, prompt: str, context_data: Optional[Dict[str, Any]]
     ) -> AsyncGenerator[str, None]:
         """High-fidelity security reasoning generator adhering to Master Spec rules."""
         full_text, _, _ = self.generate_offline_answer(prompt, context_data)
-        
-        # Stream word by word with brief pause for realistic feeling
         words = re.split(r"(\s+)", full_text)
         for w in words:
             if w:
@@ -144,13 +185,25 @@ class LLMService:
         correlations = (context_data or {}).get("correlations", [])
         rag_results = (context_data or {}).get("rag_results", [])
         active_target = (context_data or {}).get("active_target", "")
+        active_file = (context_data or {}).get("active_file")
+        ctx_data = (context_data or {}).get("ctx_data")
 
-        # 1. Check for specific software versions in prompt or correlation
-        m_apache = re.search(r"apache\s*([\d\.]+)", prompt, re.IGNORECASE)
-        m_nginx = re.search(r"nginx\s*([\d\.]+)", prompt, re.IGNORECASE)
-        m_openssh = re.search(r"openssh\s*([\d\.]+)", prompt, re.IGNORECASE)
+        # Extract user raw query
+        user_query = ""
+        if ctx_data and hasattr(ctx_data, "user_message"):
+            user_query = ctx_data.user_message
+        elif "User Query: " in prompt:
+            user_query = prompt.split("User Query: ")[-1].strip()
+        else:
+            user_query = prompt.strip()
 
-        # Check if asking about non-existent version like 2.4.99 or version with 0 matches
+        query_lower = user_query.lower()
+
+        # 1. Master Spec check: specific software versions in query
+        m_apache = re.search(r"apache\s*([\d\.]+)", user_query, re.IGNORECASE)
+        m_nginx = re.search(r"nginx\s*([\d\.]+)", user_query, re.IGNORECASE)
+        m_openssh = re.search(r"openssh\s*([\d\.]+)", user_query, re.IGNORECASE)
+
         query_version = None
         if m_apache:
             query_version = ("apache", m_apache.group(1))
@@ -159,6 +212,7 @@ class LLMService:
         elif m_openssh:
             query_version = ("openssh", m_openssh.group(1))
 
+        # Check if asking about nonexistent version like 2.4.99 or version with 0 matches
         if query_version and not correlations and not rag_results:
             prod, ver = query_version
             return (
@@ -176,8 +230,8 @@ class LLMService:
             c = correlations[0]
             cve_id = c.get("cve_id", "CVE-UNKNOWN")
             cwe_id = c.get("cwe_id", "CWE-22")
-            cvss = c.get("cvss_v3", 7.5)
-            summary = c.get("summary", "")
+            cvss = c.get("cvss_score") or c.get("cvss_v3", 7.5)
+            summary = c.get("description") or c.get("summary", "")
             target_str = active_target or "target hiện tại"
 
             response = (
@@ -190,11 +244,11 @@ class LLMService:
                 f"#### Kế hoạch xác minh an toàn (Read-Only Validation Plan):\n"
                 f"1. **Bước 1 (Passive Banner Check)**:\n"
                 f"   ```bash\n"
-                f"   curl -s -I http://{active_target or '192.168.1.100'}:8080/\n"
+                f"   curl -s -I http://{active_target or '192.168.1.100'}:80/\n"
                 f"   ```\n"
                 f"2. **Bước 2 (Path Traversal Probe - Safe GET)**:\n"
                 f"   ```bash\n"
-                f"   curl -s --path-as-is http://{active_target or '192.168.1.100'}:8080/icons/.%%32%65/.%%32%65/etc/passwd -o /dev/null -w 'HTTP Status: %{{http_code}}\\n'\n"
+                f"   curl -s --path-as-is http://{active_target or '192.168.1.100'}:80/icons/.%%32%65/.%%32%65/etc/passwd -o /dev/null -w 'HTTP Status: %{{http_code}}\\n'\n"
                 f"   ```\n"
                 f"3. **Bước 3 (Remediation)**:\n"
                 f"   - Nâng cấp Apache HTTP Server lên phiên bản 2.4.51 hoặc mới hơn ngay lập tức.\n"
@@ -214,7 +268,7 @@ class LLMService:
         if rag_results:
             top = rag_results[0]
             title = top.get("title", "")
-            snippet = top.get("snippet", "")
+            snippet = top.get("content") or top.get("snippet", "")
             source = top.get("source", "KB")
             response = (
                 f"Dựa trên tài liệu tra cứu từ Knowledge Base [{source}]:\n\n"
@@ -222,7 +276,7 @@ class LLMService:
                 f"{snippet}\n\n"
                 f"**Đánh giá rủi ro**:\n"
                 f"- Đây là tài liệu bảo mật đối chiếu trực tiếp từ kho lưu trữ SQLite KB.\n"
-                f"- Khuyến nghị xem xét lại cấu hình liên quan trên target `{active_target}`."
+                f"- Khuyến nghị xem xét lại cấu hình liên quan trên target `{active_target or 'hiện tại'}`."
             )
             return (
                 response,
@@ -230,13 +284,153 @@ class LLMService:
                 ["Kiểm tra chi tiết trong KB", "Review cấu hình liên quan"],
             )
 
-        # 4. General fallback response
+        # 4. Handle Meta Questions ("sao không trả lời", "help", "hướng dẫn", "bạn làm được gì")
+        if re.search(r"(sao|tại sao).*(ko|không)|(ko|không).*(trả lời|theo yêu cầu)|hướng dẫn|trợ giúp|help|bạn làm được gì|chức năng", query_lower):
+            target_info = f"Mục tiêu hiện tại: `{active_target}`" if active_target else "Chưa chọn mục tiêu (hãy bấm 'Set Target')"
+            return (
+                f"### 🤖 Cơ Chế Hoạt Động Của AI-Pentest Copilot\n\n"
+                f"Lý do bạn thấy câu trả lời có thể chưa như mong đợi là vì hệ thống hiện đang chạy ở chế độ **`Local Security Reasoning (Offline)`** tích hợp sẵn trên máy:\n\n"
+                f"1. **Chế độ Offline hiện tại**:\n"
+                f"   - Hoạt động **100% offline**, dựa trên dữ liệu scan thực tế (Nmap/HTTPX/Nuclei) và 539 CVEs / 52 CWEs trong SQLite nội bộ.\n"
+                f"   - Tuân thủ nguyên tắc **Anti-hallucination**: Chỉ trả lời dựa trên bằng chứng đã quét được hoặc dữ liệu CVE có thật trong KB, tuyệt đối không bịa đặt.\n"
+                f"   - Tuân thủ **Safety Guardrails**: Từ chối các lệnh tấn công, exploit hoặc phá hoại.\n\n"
+                f"2. **Những câu hỏi AI phân tích rất tốt ở chế độ này**:\n"
+                f"   - *\"Phân tích các cổng mở trên target {active_target or '192.168.100.153'}\"*\n"
+                f"   - *\"Apache 2.4.49 có CVE gì?\"*\n"
+                f"   - *\"Giải thích file scan đang mở\"*\n"
+                f"   - *\"Hướng dẫn cách phòng thủ và vá lỗi\"*\n"
+                f"   - *\"Kế hoạch kiểm tra an toàn (safe read-only validation)\"*\n\n"
+                f"3. **Để AI trò chuyện tự do và thông minh như ChatGPT/Claude**:\n"
+                f"   - Bạn có thể cấu hình **OpenAI API Key** hoặc kết nối **Ollama (DeepSeek / Llama 3)** miễn phí trên máy trong file `.env`:\n"
+                f"     ```env\n"
+                f"     OPENAI_API_KEY=sk-...\n"
+                f"     # Hoặc Ollama nội bộ:\n"
+                f"     # OLLAMA_HOST=http://localhost:11434\n"
+                f"     # LLM_MODEL=deepseek-r1:latest\n"
+                f"     ```\n"
+                f"   - Sau đó chọn nhà cung cấp ở thanh dropdown góc trên cùng của khung Chat!",
+                0.95,
+                [
+                    "Phân tích các cổng mở trên target",
+                    "Apache 2.4.49 có CVE gì?",
+                    "Hướng dẫn cách phòng thủ và vá lỗi",
+                ],
+            )
+
+        # 5. Handle Scan Analysis / Port Analysis / File Explanation
+        if re.search(r"cổng|port|dịch vụ|service|scan|nmap|httpx|nuclei|kết quả|file|phân tích", query_lower):
+            # Try to read active file or look on disk for target scans
+            file_summary = ""
+            ports_found = []
+            
+            # Check active file
+            if active_file:
+                file_name = active_file if isinstance(active_file, str) else active_file.get("name", "")
+                content_str = active_file.get("content", "") if isinstance(active_file, dict) else ""
+                
+                # Check for ports in content
+                port_matches = re.findall(r'"port":\s*(\d+)[^}]*?"service":\s*"([^"]+)"', content_str)
+                if not port_matches:
+                    port_matches = re.findall(r'(\d+)/(tcp|udp)\s+open\s+([^\r\n]+)', content_str)
+                if port_matches:
+                    for p, s, *rest in port_matches[:6]:
+                        ports_found.append(f"- **Port {p}**: `{s}`")
+
+            # Check target files on disk if nothing in active file
+            if not ports_found and active_target:
+                root_dir = pathlib.Path(__file__).resolve().parent.parent.parent.parent
+                target_clean = active_target.replace(":", "-").replace("/", "_")
+                scan_json = root_dir / "toolkit" / "03-network" / "scans" / f"target-{target_clean}" / "nmap" / "structured" / "nmap_result.json"
+                if scan_json.exists():
+                    try:
+                        nmap_data = json.loads(scan_json.read_text(encoding="utf-8"))
+                        for p in nmap_data.get("ports", []):
+                            ports_found.append(f"- **Port {p.get('port')}/{p.get('protocol')}**: `{p.get('service')}` ({p.get('product', '')} {p.get('version', '')})")
+                    except Exception:
+                        pass
+
+            if ports_found:
+                ports_list_md = "\n".join(ports_found)
+                return (
+                    f"### 📊 Báo Cáo Phân Tích Dịch Vụ & Cổng Mở ({active_target or 'Mục tiêu'})\n\n"
+                    f"Dựa trên kết quả scan Nmap/Network thu thập được trong workspace:\n\n"
+                    f"{ports_list_md}\n\n"
+                    f"#### 🔍 Đánh Giá Bề Mặt Tấn Công (Attack Surface):\n"
+                    f"1. **Dịch vụ Web (Port 80/8080/3000)**: Điểm vào chính của ứng dụng web. Cần kiểm tra phiên bản web server và các endpoint nhạy cảm.\n"
+                    f"2. **Dịch vụ Quản Trị (SSH/Port 22 nếu có)**: Cần đảm bảo sử dụng xác thực khóa SSH (Public Key) và vô hiệu hóa mật khẩu yếu.\n"
+                    f"3. **Khuyến nghị**: Thực hiện Safe Read-Only Verification để kiểm tra các lỗ hổng đã biết trên các phiên bản phần mềm này.",
+                    0.95,
+                    [
+                        "Kiểm tra CVE cho các dịch vụ trên",
+                        "Tạo verification plan an toàn",
+                        "Xuất báo cáo đánh giá an toàn",
+                    ],
+                )
+
+        # 6. Handle Remediation / Phòng thủ / Vá lỗi
+        if re.search(r"phòng thủ|khắc phục|vá|fix|sửa|bảo vệ|remediation|hardening|mitigation|bảo mật", query_lower):
+            target_str = active_target or "hệ thống mục tiêu"
+            return (
+                f"### 🛡️ Chiến Lược Phòng Thủ & Khắc Phục Lỗ Hổng ({target_str})\n\n"
+                f"Theo chuẩn an ninh mạng **NIST SP 800-53** và **CIS Benchmarks**, quy trình gia cố hệ thống gồm 4 trụ cột chính:\n\n"
+                f"1. **Cập nhật & Vá lỗ hổng (Patch Management)**:\n"
+                f"   - Nâng cấp ngay các phần mềm lỗi thời (ví dụ: Apache lên phiên bản >= 2.4.51 để vá triệt để Path Traversal/RCE).\n"
+                f"   - Tự động hóa kiểm tra bản vá bảo mật định kỳ.\n\n"
+                f"2. **Kiểm soát bề mặt mạng (Network Segmentation & Firewall)**:\n"
+                f"   - Chỉ mở các cổng mạng thực sự cần thiết cho nghiệp vụ (ví dụ: chỉ mở port 443/80 cho Web, đóng các cổng debug/nội bộ).\n"
+                f"   - Giới hạn quyền truy cập cổng quản trị (SSH, DB) theo dải IP tin cậy (Whitelisting).\n\n"
+                f"3. **Gia cố cấu hình dịch vụ (Configuration Hardening)**:\n"
+                f"   - Tắt tính năng Directory Listing / Options Indexes trên Web server.\n"
+                f"   - Thêm các HTTP Security Headers: `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`.\n\n"
+                f"4. **Nguyên tắc đặc quyền tối thiểu (Least Privilege)**:\n"
+                f"   - Chạy dịch vụ dưới tài khoản người dùng hạn chế (như `www-data`), không bao giờ chạy dịch vụ web dưới quyền `root`.",
+                0.90,
+                [
+                    "Kiểm tra lại cấu hình sau khi vá lỗi",
+                    "Chạy safe verification probe",
+                ],
+            )
+
+        # 7. Handle Safe Verification / Kiểm tra an toàn
+        if re.search(r"kiểm tra|xác minh|test|verification|check|read-only", query_lower):
+            target_host = active_target or "192.168.100.153"
+            return (
+                f"### 🧪 Kế Hoạch Xác Minh An Toàn (Safe Read-Only Verification Plan)\n\n"
+                f"Mục tiêu: `{target_host}` | Phương pháp: **Non-destructive / Read-Only**\n\n"
+                f"1. **Bước 1 (Passive Banner Verification)**:\n"
+                f"   Kiểm tra header phản hồi để xác thực phiên bản chính xác:\n"
+                f"   ```bash\n"
+                f"   curl -s -I http://{target_host}/ | grep -i 'Server:'\n"
+                f"   ```\n\n"
+                f"2. **Bước 2 (Safe Probe Request)**:\n"
+                f"   Gửi request đọc thụ động, chỉ quan sát mã trạng thái HTTP (không ghi đè dữ liệu):\n"
+                f"   ```bash\n"
+                f"   curl -s -o /dev/null -w 'HTTP Status: %{{http_code}}\\n' http://{target_host}/\n"
+                f"   ```\n\n"
+                f"3. **Bước 3 (Ghi nhận Evidence)**:\n"
+                f"   Lưu trữ kết quả vào mục Findings để lập báo cáo đánh giá an toàn.",
+                0.95,
+                [
+                    "Tạo Finding từ kết quả kiểm tra",
+                    "Xem báo cáo bảo mật tổng thể",
+                ],
+            )
+
+        # 8. General fallback response
         return (
             f"Tôi là AI-Pentest Copilot. Tôi đang quan sát target: `{active_target or 'chưa chọn'}`.\n\n"
-            f"- **Nguyên tắc**: Không tự ý exploit, luôn cung cấp lệnh reviewable và kiểm tra safe read-only.\n"
-            f"- Bạn có thể hỏi về các CVE, quét recon mục tiêu, hoặc yêu cầu giải thích kết quả scan nmap/nuclei.",
+            f"- **Nguyên tắc hoạt động**: Không tự ý exploit, luôn cung cấp lệnh reviewable và kiểm tra safe read-only.\n"
+            f"- Bạn có thể hỏi tôi:\n"
+            f"  + *\"Phân tích các cổng mở trên target\"*\n"
+            f"  + *\"Apache 2.4.49 có CVE gì?\"*\n"
+            f"  + *\"Hướng dẫn cách phòng thủ và vá lỗi\"*\n"
+            f"  + *\"Tạo verification plan an toàn\"*",
             0.90,
-            ["Chạy Nmap scan target", "Phân tích file kết quả", "Tra cứu CVE trong KB"],
+            [
+                "Phân tích các cổng mở trên target",
+                "Hướng dẫn cách phòng thủ và vá lỗi",
+                "Tạo verification plan an toàn",
+            ],
         )
 
 
