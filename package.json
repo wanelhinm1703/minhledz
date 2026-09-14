@@ -1,0 +1,16 @@
+{
+  "name": "ai-pentest-copilot-workbench",
+  "version": "5.0.0",
+  "description": "Full-stack Security Workbench + AI Copilot + IDE Chat + Vulnerability Knowledge Base",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix frontend run build",
+    "dev": "npm --prefix frontend run dev",
+    "frontend": "npm --prefix frontend run dev",
+    "test": "python run.py test",
+    "start": "python run.py dev"
+  },
+  "keywords": ["pentest", "security", "copilot", "cve", "workbench"],
+  "author": "Google DeepMind Agentic Coding",
+  "license": "ISC"
+}
