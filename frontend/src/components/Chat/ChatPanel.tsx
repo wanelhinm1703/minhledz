@@ -29,7 +29,7 @@ interface ProviderInfo {
 }
 
 export const ChatPanel: React.FC = () => {
-  const { activeTarget, openTabs, activeTabId } = useWorkspaceStore();
+  const { activeTarget, openTabs, activeTabId, selectedProvider, setSelectedProvider } = useWorkspaceStore();
   const activeTab = openTabs.find((t) => t.id === activeTabId);
   const activeFile = activeTab?.path;
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -68,15 +68,25 @@ export const ChatPanel: React.FC = () => {
       .then((res) => res.json())
       .then((data) => {
         if (data.providers) setProviders(data.providers);
-        if (data.active_provider) setActiveProvider(data.active_provider);
+        if (data.active_provider) {
+          setActiveProvider(data.active_provider);
+          setSelectedProvider(data.active_provider);
+        }
       })
       .catch(() => {
         // Fallback info if offline
         setProviders([
-          { id: 'offline', name: 'Local Security Reasoning', active: true, ready: true },
+          { id: 'gemini', name: 'Google Gemini Flash', active: true, ready: true },
+          { id: 'offline', name: 'Local Security Reasoning', active: false, ready: true },
         ]);
       });
   }, []);
+
+  useEffect(() => {
+    if (selectedProvider && selectedProvider !== activeProvider) {
+      setActiveProvider(selectedProvider);
+    }
+  }, [selectedProvider]);
 
   const switchProvider = async (pId: string) => {
     try {
@@ -254,12 +264,15 @@ export const ChatPanel: React.FC = () => {
         </div>
         <select
           value={activeProvider}
-          onChange={(e) => switchProvider(e.target.value)}
-          className="bg-zinc-900 text-zinc-400 border border-zinc-700 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:border-cyan-500"
+          onChange={(e) => {
+            switchProvider(e.target.value);
+            setSelectedProvider(e.target.value);
+          }}
+          className="bg-zinc-900 text-cyan-300 font-medium border border-cyan-800/80 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:border-cyan-500 cursor-pointer"
         >
           {providers.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name.split(' ')[0]} {p.active ? '●' : ''}
+            <option key={p.id} value={p.id} className="bg-zinc-900 text-zinc-200">
+              {p.id === 'gemini' ? '✨ Gemini Flash' : p.name.split(' ')[0]} {p.active ? '●' : ''}
             </option>
           ))}
         </select>

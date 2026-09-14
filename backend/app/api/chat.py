@@ -86,7 +86,20 @@ async def send_message_sync(req: SendMessageRequest):
         conversation_id=cid,
     )
 
-    text, conf, next_steps = llm_service.generate_offline_answer(req.message, ctx)
+    if llm_service.active_provider != "offline":
+        chunks = []
+        async for chunk in llm_service.stream_response(prompt=req.message, context_data=ctx):
+            chunks.append(chunk)
+        text = "".join(chunks)
+        conf = 0.95
+        next_steps = [
+            "Phân tích thêm chi tiết mục tiêu",
+            "Tạo verification plan an toàn (read-only)",
+            "Đề xuất giải pháp phòng thủ",
+        ]
+    else:
+        text, conf, next_steps = llm_service.generate_offline_answer(req.message, ctx)
+
     chat_db.add_message(
         conversation_id=cid,
         role="assistant",
