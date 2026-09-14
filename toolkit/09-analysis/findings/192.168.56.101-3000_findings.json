@@ -1,8 +1,54 @@
 {
   "target_id": "192.168.56.101-3000",
-  "generated_at": "2026-09-14T15:03:56.420004+00:00",
-  "total_findings": 2,
+  "generated_at": "2026-09-14T15:07:03.949920+00:00",
+  "total_findings": 5,
   "findings": [
+    {
+      "target_id": "192.168.56.101-3000",
+      "title": "Node.js (Express) 14.17.0 \u2014 CVE-2022-1110",
+      "cve_id": "CVE-2022-1110",
+      "cwe_id": "CWE-200",
+      "cvss_score": 9.0,
+      "cvss_severity": "CRITICAL",
+      "status": "CANDIDATE",
+      "affected_asset": "192.168.56.101:3000",
+      "description": "D\u1ecbch v\u1ee5 Node.js (Express) phi\u00ean b\u1ea3n 14.17.0 ch\u1ea1y tr\u00ean c\u1ed5ng 3000 kh\u1edbp v\u1edbi l\u1ed7 h\u1ed5ng \u0111\u00e3 x\u00e1c nh\u1eadn trong NVD: Security vulnerability in openbsd openssh version 8.0p1 allowing CWE-200 under specific operational configurations.",
+      "remediation": "N\u00e2ng c\u1ea5p Node.js (Express) l\u00ean phi\u00ean b\u1ea3n m\u1edbi nh\u1ea5t \u0111\u00e3 \u0111\u01b0\u1ee3c v\u00e1 l\u1ed7i.",
+      "evidence_chain": [
+        {
+          "tool": "nmap",
+          "file_path": "03-network/scans/target-192.168.56.101-3000/nmap/structured/nmap_result.json",
+          "matched_text": "Port 3000/tcp open: Node.js (Express) 14.17.0 (Service: http)",
+          "timestamp": "2026-09-14T15:07:03.934322+00:00"
+        }
+      ],
+      "id": "FIND-192-168-56-101-3000-FA09B3FD",
+      "created_at": "2026-09-14T15:07:03.934854+00:00",
+      "updated_at": "2026-09-14T15:07:03.934854+00:00"
+    },
+    {
+      "target_id": "192.168.56.101-3000",
+      "title": "Node.js (Express) 14.17.0 \u2014 CVE-2021-1109",
+      "cve_id": "CVE-2021-1109",
+      "cwe_id": "CWE-78",
+      "cvss_score": 8.9,
+      "cvss_severity": "HIGH",
+      "status": "CANDIDATE",
+      "affected_asset": "192.168.56.101:3000",
+      "description": "D\u1ecbch v\u1ee5 Node.js (Express) phi\u00ean b\u1ea3n 14.17.0 ch\u1ea1y tr\u00ean c\u1ed5ng 3000 kh\u1edbp v\u1edbi l\u1ed7 h\u1ed5ng \u0111\u00e3 x\u00e1c nh\u1eadn trong NVD: Security vulnerability in openbsd openssh version 8.0p1 allowing CWE-78 under specific operational configurations.",
+      "remediation": "N\u00e2ng c\u1ea5p Node.js (Express) l\u00ean phi\u00ean b\u1ea3n m\u1edbi nh\u1ea5t \u0111\u00e3 \u0111\u01b0\u1ee3c v\u00e1 l\u1ed7i.",
+      "evidence_chain": [
+        {
+          "tool": "nmap",
+          "file_path": "03-network/scans/target-192.168.56.101-3000/nmap/structured/nmap_result.json",
+          "matched_text": "Port 3000/tcp open: Node.js (Express) 14.17.0 (Service: http)",
+          "timestamp": "2026-09-14T15:07:03.929070+00:00"
+        }
+      ],
+      "id": "FIND-192-168-56-101-3000-897759C2",
+      "created_at": "2026-09-14T15:07:03.930157+00:00",
+      "updated_at": "2026-09-14T15:07:03.930157+00:00"
+    },
     {
       "target_id": "192.168.56.101-3000",
       "title": "Nuclei: Apache 2.4.49 - Path Traversal & Remote Code Execution",
@@ -24,7 +70,30 @@
       ],
       "id": "FIND-192-168-56-101-3000-C23D9D3F",
       "created_at": "2026-09-14T07:52:55.519689+00:00",
-      "updated_at": "2026-09-14T15:03:56.410468+00:00"
+      "updated_at": "2026-09-14T15:07:03.940955+00:00"
+    },
+    {
+      "target_id": "192.168.56.101-3000",
+      "title": "Node.js (Express) 14.17.0 \u2014 CVE-2024-21896",
+      "cve_id": "CVE-2024-21896",
+      "cwe_id": "CWE-22",
+      "cvss_score": 7.5,
+      "cvss_severity": "HIGH",
+      "status": "CANDIDATE",
+      "affected_asset": "192.168.56.101:3000",
+      "description": "D\u1ecbch v\u1ee5 Node.js (Express) phi\u00ean b\u1ea3n 14.17.0 ch\u1ea1y tr\u00ean c\u1ed5ng 3000 kh\u1edbp v\u1edbi l\u1ed7 h\u1ed5ng \u0111\u00e3 x\u00e1c nh\u1eadn trong NVD: Path traversal vulnerability in Node.js permission model allows bypassing filesystem constraints.",
+      "remediation": "N\u00e2ng c\u1ea5p Node.js (Express) l\u00ean phi\u00ean b\u1ea3n m\u1edbi nh\u1ea5t \u0111\u00e3 \u0111\u01b0\u1ee3c v\u00e1 l\u1ed7i.",
+      "evidence_chain": [
+        {
+          "tool": "nmap",
+          "file_path": "03-network/scans/target-192.168.56.101-3000/nmap/structured/nmap_result.json",
+          "matched_text": "Port 3000/tcp open: Node.js (Express) 14.17.0 (Service: http)",
+          "timestamp": "2026-09-14T15:07:03.924306+00:00"
+        }
+      ],
+      "id": "FIND-192-168-56-101-3000-5C384C7B",
+      "created_at": "2026-09-14T15:07:03.924851+00:00",
+      "updated_at": "2026-09-14T15:07:03.924851+00:00"
     },
     {
       "target_id": "192.168.56.101-3000",
@@ -47,7 +116,7 @@
       ],
       "id": "FIND-192-168-56-101-3000-F48C3B95",
       "created_at": "2026-09-14T07:52:55.523398+00:00",
-      "updated_at": "2026-09-14T15:03:56.415157+00:00"
+      "updated_at": "2026-09-14T15:07:03.945096+00:00"
     }
   ]
 }

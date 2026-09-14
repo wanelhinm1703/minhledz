@@ -38,8 +38,8 @@
       "extra": {}
     },
     "status": "active",
-    "created_at": "2026-09-14T15:04:00.250758+00:00",
-    "updated_at": "2026-09-14T15:04:00.250771+00:00"
+    "created_at": "2026-09-14T15:07:08.184992+00:00",
+    "updated_at": "2026-09-14T15:07:08.185006+00:00"
   },
   {
     "target_id": "target-192.168.56.101-3000",
@@ -80,8 +80,8 @@
       "extra": {}
     },
     "status": "active",
-    "created_at": "2026-09-14T15:04:00.200763+00:00",
-    "updated_at": "2026-09-14T15:04:00.200777+00:00"
+    "created_at": "2026-09-14T15:07:08.146966+00:00",
+    "updated_at": "2026-09-14T15:07:08.146981+00:00"
   },
   {
     "target_id": "target-8.8.8.8",
@@ -122,8 +122,8 @@
       "extra": {}
     },
     "status": "blocked",
-    "created_at": "2026-09-14T15:04:00.279658+00:00",
-    "updated_at": "2026-09-14T15:04:00.279670+00:00"
+    "created_at": "2026-09-14T15:07:08.210272+00:00",
+    "updated_at": "2026-09-14T15:07:08.210286+00:00"
   },
   {
     "target_id": "target-192.168.100.153",
@@ -166,5 +166,47 @@
     "status": "active",
     "created_at": "2026-09-14T07:21:13.379845+00:00",
     "updated_at": "2026-09-14T07:21:13.379859+00:00"
+  },
+  {
+    "target_id": "target-192.168.100.153-8080",
+    "campaign_id": "lab-local",
+    "name": "192.168.100.153-8080",
+    "type": "url",
+    "raw_input": "http://192.168.100.153:8080",
+    "normalized_value": "http://192.168.100.153:8080/",
+    "host": "192.168.100.153",
+    "port": 8080,
+    "scheme": "http",
+    "path": "/",
+    "environment": "lab",
+    "scope": {
+      "allowed_ports": [],
+      "forbidden_ports": [],
+      "allowed_attacks": [
+        "recon",
+        "web",
+        "network"
+      ],
+      "forbidden_attacks": [
+        "dos",
+        "brute-force",
+        "exploit"
+      ],
+      "is_in_scope": true,
+      "scope_rule": null
+    },
+    "tags": [
+      "url",
+      "lab"
+    ],
+    "metadata": {
+      "os": null,
+      "technologies": [],
+      "notes": null,
+      "extra": {}
+    },
+    "status": "active",
+    "created_at": "2026-09-14T15:07:03.809225+00:00",
+    "updated_at": "2026-09-14T15:07:03.809239+00:00"
   }
 ]

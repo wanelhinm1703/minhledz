@@ -3,7 +3,7 @@
   "target_input": "192.168.56.101",
   "normalized_value": "192.168.56.101",
   "campaign_id": "lab-local",
-  "timestamp": "2026-09-14T15:04:00.251983+00:00",
+  "timestamp": "2026-09-14T15:07:08.186382+00:00",
   "capabilities": [
     "network",
     "port_discovery",

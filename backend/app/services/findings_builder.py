@@ -67,22 +67,37 @@ class FindingsBuilder:
             rel_path = str(file_path.relative_to(self.root_dir / "toolkit")).replace("\\", "/")
             
             for host in data.get("hosts", []):
-                ip = host.get("ip", target_id)
+                ip = host.get("ip") or host.get("addresses", {}).get("ipv4", target_id)
                 for port_info in host.get("ports", []):
-                    port = port_info.get("port")
-                    service = port_info.get("service", "")
-                    product = port_info.get("product", "")
-                    version = port_info.get("version", "")
-                    state = port_info.get("state", "")
+                    port = port_info.get("port") or port_info.get("portid")
+                    service_obj = port_info.get("service", {})
+                    if isinstance(service_obj, dict):
+                        service = service_obj.get("name", "")
+                        product = service_obj.get("product", "")
+                        version = service_obj.get("version", "")
+                    else:
+                        service = str(service_obj)
+                        product = port_info.get("product", "")
+                        version = port_info.get("version", "")
 
+                    state = port_info.get("state", "")
                     if state != "open":
                         continue
 
                     asset = f"{ip}:{port}"
 
+                    # Normalize product for KB correlation
+                    clean_prod = product
+                    if "apache" in product.lower():
+                        clean_prod = "Apache"
+                    elif "openssh" in product.lower():
+                        clean_prod = "OpenSSH"
+                    elif "nginx" in product.lower():
+                        clean_prod = "nginx"
+
                     # Correlate product & version with Vulnerability KB
-                    if product and version:
-                        matches = Correlator.correlate(product=product, version=version, limit=3)
+                    if clean_prod and version:
+                        matches = Correlator.correlate(product=clean_prod, version=version, limit=3)
                         for m in matches:
                             finding = self._upsert_finding(
                                 target_id=target_id,
