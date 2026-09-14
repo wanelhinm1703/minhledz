@@ -1,5 +1,5 @@
 import React from 'react'
-import { Shield, Plus, RefreshCw, LayoutGrid, FileCode } from 'lucide-react'
+import { Shield, Plus, RefreshCw, LayoutGrid, FileCode, FileText } from 'lucide-react'
 import { useWorkspaceStore } from '../../store/workspaceStore'
 
 export const Header: React.FC = () => {
@@ -45,6 +45,17 @@ export const Header: React.FC = () => {
           >
             <LayoutGrid className="w-3.5 h-3.5" />
             <span>Findings Manager</span>
+          </button>
+          <button
+            onClick={() => setActiveView('reports')}
+            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded transition ${
+              activeView === 'reports'
+                ? 'bg-zinc-800 text-cyan-400 font-semibold'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Pentest Report</span>
           </button>
         </div>
       </div>

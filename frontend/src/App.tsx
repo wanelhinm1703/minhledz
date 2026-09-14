@@ -3,6 +3,7 @@ import { Header } from './components/Layout/Header'
 import { ExplorerPanel } from './components/Explorer/ExplorerPanel'
 import { MainPanel } from './components/Editor/MainPanel'
 import { FindingsManager } from './components/Findings/FindingsManager'
+import { ReportViewer } from './components/Reports/ReportViewer'
 import { ChatPanel } from './components/Chat/ChatPanel'
 import { TerminalPanel } from './components/Terminal/TerminalPanel'
 import { TargetInputModal } from './components/Target/TargetInputModal'
@@ -23,6 +24,8 @@ export const App: React.FC = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
           {activeView === 'findings' ? (
             <FindingsManager />
+          ) : activeView === 'reports' ? (
+            <ReportViewer />
           ) : (
             <>
               <MainPanel />

@@ -37,12 +37,12 @@ interface WorkspaceState {
   terminalLogs: string[];
   isTargetModalOpen: boolean;
   selectedProvider: string;
-  activeView: 'editor' | 'findings';
+  activeView: 'editor' | 'findings' | 'reports';
   
   setTargets: (targets: TargetItem[]) => void;
   setScans: (scans: ScanRecord[]) => void;
   setActiveTarget: (target: TargetItem | null) => void;
-  setActiveView: (view: 'editor' | 'findings') => void;
+  setActiveView: (view: 'editor' | 'findings' | 'reports') => void;
   openFile: (file: { name: string; rel_path: string }) => Promise<void>;
   closeTab: (id: string) => void;
   setActiveTab: (id: string) => void;

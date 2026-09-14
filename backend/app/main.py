@@ -13,6 +13,8 @@ from backend.app.api.scans import router as scans_router
 from backend.app.api.chat import router as chat_router
 from backend.app.api.llm import router as llm_router
 from backend.app.api.findings import router as findings_router
+from backend.app.api.verification import router as verification_router
+from backend.app.api.reports import router as reports_router
 from backend.app.ws.chat import ws_router
 
 
@@ -47,6 +49,8 @@ app.include_router(scans_router, prefix="/api")
 app.include_router(chat_router, prefix="/api/chat")
 app.include_router(llm_router, prefix="/api/llm")
 app.include_router(findings_router, prefix="/api")
+app.include_router(verification_router, prefix="/api")
+app.include_router(reports_router, prefix="/api")
 
 # Register WebSocket Routers
 app.include_router(ws_router)
