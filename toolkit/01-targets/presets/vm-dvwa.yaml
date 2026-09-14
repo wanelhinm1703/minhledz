@@ -1,0 +1,12 @@
+id: vm-dvwa
+type: url
+campaign: lab-local
+name: "Damn Vulnerable Web App"
+address: http://192.168.56.102:80
+scope:
+  allowed_ports:
+    - 80
+tags:
+  - web
+  - dvwa
+environment: lab

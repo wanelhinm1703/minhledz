@@ -1,0 +1,12 @@
+id: vm-juice-shop
+type: url
+campaign: lab-local
+name: "OWASP Juice Shop"
+address: http://192.168.56.101:3000
+scope:
+  allowed_ports:
+    - 3000
+tags:
+  - web
+  - owasp
+environment: lab

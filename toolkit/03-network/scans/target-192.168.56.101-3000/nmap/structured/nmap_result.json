@@ -1,0 +1,48 @@
+{
+  "scan_metadata": {
+    "tool": "nmap",
+    "target": "http://192.168.56.101:3000/",
+    "command": "nmap -sV -sC -Pn -T4 -p 3000 192.168.56.101 -oX C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\03-network\\scans\\target-192.168.56.101-3000\\nmap\\raw\\nmap_raw.xml -oN C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\03-network\\scans\\target-192.168.56.101-3000\\nmap\\normal\\nmap_normal.txt",
+    "arguments": "-sV -sC -Pn -T4 -p 3000 192.168.56.101 -oX C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\03-network\\scans\\target-192.168.56.101-3000\\nmap\\raw\\nmap_raw.xml -oN C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\03-network\\scans\\target-192.168.56.101-3000\\nmap\\normal\\nmap_normal.txt",
+    "timestamp": "2026-09-14T07:09:31.076783+00:00",
+    "duration_seconds": 0.0005879402160644531,
+    "exit_code": 0
+  },
+  "hosts": [
+    {
+      "status": {
+        "state": "up",
+        "reason": "user-set"
+      },
+      "addresses": {
+        "ipv4": "192.168.56.101"
+      },
+      "hostnames": [
+        "192.168.56.101"
+      ],
+      "ports": [
+        {
+          "portid": 3000,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "http",
+            "product": "Node.js (Express)",
+            "version": "14.17.0",
+            "extrainfo": "",
+            "cpe": [
+              "cpe:/a:nodejs:node.js:14.17.0"
+            ]
+          },
+          "scripts": [
+            {
+              "id": "http-title",
+              "output": "Vulnerable Service Playground"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

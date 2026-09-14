@@ -1,0 +1,34 @@
+import pathlib
+
+def main():
+    root = pathlib.Path(__file__).resolve().parent.parent.parent
+    directories = [
+        "backend/app/api", "backend/app/ws", "backend/app/core", "backend/app/services",
+        "backend/app/storage", "backend/app/schemas", "backend/app/ingest", "backend/app/eval",
+        "backend/app/utils", "backend/tests",
+        "frontend/src/components/Layout", "frontend/src/components/Explorer",
+        "frontend/src/components/Editor", "frontend/src/components/Target",
+        "frontend/src/components/Chat", "frontend/src/components/Terminal",
+        "frontend/src/components/Settings", "frontend/src/components/common",
+        "frontend/src/pages", "frontend/src/hooks", "frontend/src/api",
+        "frontend/src/store", "frontend/src/types", "frontend/src/lib", "frontend/src/styles",
+        "security/docs", "security/schemas", "security/datasets/samples",
+        "security/datasets/expected", "security/datasets/knowledge", "security/evaluation",
+        "security/knowledge", "security/attack-plans",
+        "toolkit/00-meta/templates", "toolkit/01-targets/campaigns/lab-local/targets",
+        "toolkit/01-targets/presets", "toolkit/01-targets/templates", "toolkit/01-targets/registry",
+        "toolkit/02-passive", "toolkit/03-network/scans", "toolkit/04-web",
+        "toolkit/05-vulnerability", "toolkit/06-service-enum", "toolkit/07-cloud-secret",
+        "toolkit/08-manual", "toolkit/09-analysis", "toolkit/10-findings",
+        "toolkit/11-plans", "toolkit/12-reports", "toolkit/tools/network",
+        "toolkit/scripts", "toolkit/wordlists", "toolkit/configs",
+        "toolkit/logs", "toolkit/tmp",
+        "shared/types", "shared/api", "shared/websocket", "shared/constants",
+        "docs", "infra/docker", "scripts"
+    ]
+    for d in directories:
+        (root / d).mkdir(parents=True, exist_ok=True)
+    print("Directories initialized successfully.")
+
+if __name__ == "__main__":
+    main()

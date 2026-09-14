@@ -1,0 +1,12 @@
+id: template-ip
+type: ip
+campaign: lab-local
+name: "Target IP Template"
+address: 192.168.56.101
+scope:
+  allowed_ports:
+    - 80
+    - 443
+  forbidden_ports:
+    - 22
+environment: lab

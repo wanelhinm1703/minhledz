@@ -1,0 +1,13 @@
+id: lab-local
+name: "Local Pentest Lab"
+description: "Default authorized laboratory campaign for local VMs and containers"
+scope:
+  allowed_networks:
+    - 192.168.0.0/16
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 127.0.0.0/8
+  allowed_domains:
+    - "*.local"
+    - "localhost"
+created_at: "2026-09-14T00:00:00Z"

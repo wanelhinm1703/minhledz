@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Target",
+  "description": "Schema for AI-Pentest Copilot Target Object",
+  "type": "object",
+  "required": [
+    "target_id",
+    "campaign_id",
+    "name",
+    "type",
+    "raw_input",
+    "normalized_value",
+    "host"
+  ],
+  "properties": {
+    "target_id": { "type": "string" },
+    "campaign_id": { "type": "string" },
+    "name": { "type": "string" },
+    "type": {
+      "type": "string",
+      "enum": ["ipv4", "ipv6", "cidr", "domain", "hostname", "url", "host_port", "custom"]
+    },
+    "raw_input": { "type": "string" },
+    "normalized_value": { "type": "string" },
+    "host": { "type": "string" },
+    "port": { "type": ["integer", "null"], "minimum": 1, "maximum": 65535 },
+    "scheme": { "type": ["string", "null"] },
+    "path": { "type": ["string", "null"] },
+    "environment": { "type": "string" },
+    "status": { "type": "string", "enum": ["active", "archived", "blocked"] },
+    "scope": { "type": "object" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "created_at": { "type": "string" },
+    "updated_at": { "type": "string" }
+  },
+  "additionalProperties": true
+}
