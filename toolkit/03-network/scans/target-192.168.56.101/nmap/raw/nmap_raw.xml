@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE nmaprun>
-<nmaprun scanner="nmap" args="nmap -sV -sC -Pn -T4 -p 80 192.168.56.101" start="1789369766" version="7.94">
+<nmaprun scanner="nmap" args="nmap -sV -sC -Pn -T4 -p 80 192.168.56.101" start="1789370498" version="7.94">
 <scaninfo type="syn" protocol="tcp" numservices="1" services="80"/>
 <verbose level="0"/>
 <debugging level="0"/>
-<host starttime="1789369766" endtime="1789369768">
+<host starttime="1789370498" endtime="1789370500">
 <status state="up" reason="user-set"/>
 <address addr="192.168.56.101" addrtype="ipv4"/>
 <hostnames>
@@ -22,7 +22,7 @@
 <times srtt="1500" rttvar="5000" to="100000"/>
 </host>
 <runstats>
-  <finished time="1789369768" timestr="Mon Sep 14 14:09:26 2026" summary="Nmap done at Mon Sep 14 14:09:26 2026; 1 IP address (1 host up) scanned in 2.15 seconds" elapsed="2.15" exit="success"/>
+  <finished time="1789370500" timestr="Mon Sep 14 14:21:38 2026" summary="Nmap done at Mon Sep 14 14:21:38 2026; 1 IP address (1 host up) scanned in 2.15 seconds" elapsed="2.15" exit="success"/>
   <hosts up="1" down="0" total="1"/>
 </runstats>
 </nmaprun>

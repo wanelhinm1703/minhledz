@@ -1,0 +1,36 @@
+{
+  "target_id": "target-192.168.56.101-3000",
+  "target_input": "http://192.168.56.101:3000",
+  "normalized_value": "http://192.168.56.101:3000/",
+  "campaign_id": "lab-local",
+  "timestamp": "2026-09-14T07:21:58.452243+00:00",
+  "capabilities": [
+    "web",
+    "http_probing",
+    "vulnerability_detection",
+    "service_discovery"
+  ],
+  "tools_executed": [
+    "nmap",
+    "httpx",
+    "nuclei"
+  ],
+  "evidence_files": {
+    "nmap": {
+      "raw": "C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\03-network\\scans\\target-192.168.56.101-3000\\nmap\\raw\\nmap_raw.xml",
+      "normal": "C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\03-network\\scans\\target-192.168.56.101-3000\\nmap\\normal\\nmap_normal.txt",
+      "structured": "C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\03-network\\scans\\target-192.168.56.101-3000\\nmap\\structured\\nmap_result.json",
+      "commands": "C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\03-network\\scans\\target-192.168.56.101-3000\\nmap\\commands.md"
+    },
+    "httpx": {
+      "raw": "C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\04-web\\scans\\target-192.168.56.101-3000\\httpx\\raw\\httpx_raw.jsonl",
+      "structured": "C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\04-web\\scans\\target-192.168.56.101-3000\\httpx\\structured\\httpx_result.json",
+      "commands": "C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\04-web\\scans\\target-192.168.56.101-3000\\httpx\\commands.md"
+    },
+    "nuclei": {
+      "raw": "C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\05-vulnerability\\scans\\target-192.168.56.101-3000\\nuclei\\raw\\nuclei_raw.jsonl",
+      "structured": "C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\05-vulnerability\\scans\\target-192.168.56.101-3000\\nuclei\\structured\\nuclei_result.json",
+      "commands": "C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\05-vulnerability\\scans\\target-192.168.56.101-3000\\nuclei\\commands.md"
+    }
+  }
+}

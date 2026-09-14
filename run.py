@@ -10,6 +10,7 @@ def main():
         print("AI-Pentest Copilot - Universal CLI Runner")
         print("  python run.py setup")
         print("  python run.py scan TARGET=<target>")
+        print("  python run.py pipeline TARGET=<target>")
         print("  python run.py test")
         print("  python run.py dev")
         return
@@ -18,7 +19,7 @@ def main():
     if cmd == "setup":
         res = subprocess.run([sys.executable, str(root / "toolkit" / "scripts" / "init_dirs.py")])
         sys.exit(res.returncode)
-    elif cmd == "scan":
+    elif cmd in ("scan", "pipeline"):
         target = None
         for arg in sys.argv[2:]:
             if arg.startswith("TARGET="):
@@ -26,9 +27,12 @@ def main():
             elif not target:
                 target = arg
         if not target:
-            print("ERROR: TARGET is required. Example: python run.py scan TARGET=192.168.56.101")
+            print(f"ERROR: TARGET is required. Example: python run.py {cmd} TARGET=192.168.56.101")
             sys.exit(1)
-        res = subprocess.run([sys.executable, str(root / "toolkit" / "scripts" / "targets.py"), "scan", "--target", target])
+        
+        script = "targets.py" if cmd == "scan" else "pipeline_runner.py"
+        args = ["scan", "--target", target] if cmd == "scan" else [target]
+        res = subprocess.run([sys.executable, str(root / "toolkit" / "scripts" / script)] + args)
         sys.exit(res.returncode)
     elif cmd == "test":
         res = subprocess.run([sys.executable, "-m", "pytest", "backend/tests", "-v"])
