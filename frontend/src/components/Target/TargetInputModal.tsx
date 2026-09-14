@@ -25,13 +25,25 @@ export const TargetInputModal: React.FC = () => {
         body: JSON.stringify({ input: inputVal.trim() }),
       });
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.detail || 'Target detection failed');
+        let errMsg = `Lỗi máy chủ (${res.status})`;
+        try {
+          const errData = await res.json();
+          errMsg = errData.detail || errMsg;
+        } catch {
+          if (res.status === 502 || res.status === 504 || res.status === 500) {
+            errMsg = 'Không thể kết nối đến Backend Server (cổng 8000). Hãy đảm bảo bạn đã mở terminal chạy lệnh: python run.py dev';
+          }
+        }
+        throw new Error(errMsg);
       }
       const data = await res.json();
       setDetection(data);
     } catch (err: any) {
-      setError(err.message);
+      if (err.name === 'TypeError' || err.message.includes('JSON') || err.message.includes('fetch')) {
+        setError('Không thể kết nối đến Backend Server (cổng 8000). Hãy đảm bảo bạn đã mở terminal chạy lệnh: python run.py dev');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setDetecting(false);
     }
@@ -49,16 +61,25 @@ export const TargetInputModal: React.FC = () => {
         body: JSON.stringify({ target: inputVal.trim() }),
       });
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.detail || 'Recon trigger failed');
+        let errMsg = `Lỗi máy chủ (${res.status})`;
+        try {
+          const errData = await res.json();
+          errMsg = errData.detail || errMsg;
+        } catch {
+          if (res.status === 502 || res.status === 504 || res.status === 500) {
+            errMsg = 'Không thể kết nối đến Backend Server (cổng 8000). Hãy đảm bảo Backend đang chạy.';
+          }
+        }
+        throw new Error(errMsg);
       }
       const data = await res.json();
       appendTerminalLog(`[+] Recon completed! Tools: ${data.manifest.tools_executed.join(', ')}`);
       await fetchInitialData();
       setTargetModalOpen(false);
     } catch (err: any) {
-      appendTerminalLog(`[!] Error running scan: ${err.message}`);
-      setError(err.message);
+      const msg = err.message.includes('JSON') ? 'Không thể kết nối tới Backend (cổng 8000)' : err.message;
+      appendTerminalLog(`[!] Error running scan: ${msg}`);
+      setError(msg);
     } finally {
       setScanning(false);
     }

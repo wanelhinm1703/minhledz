@@ -47,7 +47,7 @@ def main():
         res = subprocess.run([sys.executable, "-m", "pytest", "backend/tests", "-v"])
         sys.exit(res.returncode)
     elif cmd == "dev":
-        res = subprocess.run(["uvicorn", "backend.app.main:app", "--reload", "--port", "8000"])
+        res = subprocess.run([sys.executable, "-m", "uvicorn", "backend.app.main:app", "--reload", "--port", "8000"])
         sys.exit(res.returncode)
     else:
         print(f"Unknown command: {cmd}")
