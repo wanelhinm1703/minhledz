@@ -38,8 +38,8 @@
       "extra": {}
     },
     "status": "active",
-    "created_at": "2026-09-14T15:07:08.184992+00:00",
-    "updated_at": "2026-09-14T15:07:08.185006+00:00"
+    "created_at": "2026-09-14T15:29:32.565075+00:00",
+    "updated_at": "2026-09-14T15:29:32.565086+00:00"
   },
   {
     "target_id": "target-192.168.56.101-3000",
@@ -80,8 +80,8 @@
       "extra": {}
     },
     "status": "active",
-    "created_at": "2026-09-14T15:07:08.146966+00:00",
-    "updated_at": "2026-09-14T15:07:08.146981+00:00"
+    "created_at": "2026-09-14T15:29:32.536260+00:00",
+    "updated_at": "2026-09-14T15:29:32.536269+00:00"
   },
   {
     "target_id": "target-8.8.8.8",
@@ -122,8 +122,8 @@
       "extra": {}
     },
     "status": "blocked",
-    "created_at": "2026-09-14T15:07:08.210272+00:00",
-    "updated_at": "2026-09-14T15:07:08.210286+00:00"
+    "created_at": "2026-09-14T15:29:32.581193+00:00",
+    "updated_at": "2026-09-14T15:29:32.581204+00:00"
   },
   {
     "target_id": "target-192.168.100.153",
@@ -151,7 +151,7 @@
         "exploit"
       ],
       "is_in_scope": true,
-      "scope_rule": "192.168.0.0/16"
+      "scope_rule": null
     },
     "tags": [
       "ipv4",
@@ -164,8 +164,8 @@
       "extra": {}
     },
     "status": "active",
-    "created_at": "2026-09-14T07:21:13.379845+00:00",
-    "updated_at": "2026-09-14T07:21:13.379859+00:00"
+    "created_at": "2026-09-14T15:23:27.952911+00:00",
+    "updated_at": "2026-09-14T15:23:27.952924+00:00"
   },
   {
     "target_id": "target-192.168.100.153-8080",
@@ -206,7 +206,49 @@
       "extra": {}
     },
     "status": "active",
-    "created_at": "2026-09-14T15:07:03.809225+00:00",
-    "updated_at": "2026-09-14T15:07:03.809239+00:00"
+    "created_at": "2026-09-14T15:29:27.307420+00:00",
+    "updated_at": "2026-09-14T15:29:27.307432+00:00"
+  },
+  {
+    "target_id": "target-www.sublimemerge.com-443",
+    "campaign_id": "lab-local",
+    "name": "www.sublimemerge.com-443",
+    "type": "url",
+    "raw_input": "https://www.sublimemerge.com/download_thanks?target=win-x64",
+    "normalized_value": "https://www.sublimemerge.com/download_thanks",
+    "host": "www.sublimemerge.com",
+    "port": 443,
+    "scheme": "https",
+    "path": "/download_thanks",
+    "environment": "lab",
+    "scope": {
+      "allowed_ports": [],
+      "forbidden_ports": [],
+      "allowed_attacks": [
+        "recon",
+        "web",
+        "network"
+      ],
+      "forbidden_attacks": [
+        "dos",
+        "brute-force",
+        "exploit"
+      ],
+      "is_in_scope": true,
+      "scope_rule": null
+    },
+    "tags": [
+      "url",
+      "lab"
+    ],
+    "metadata": {
+      "os": null,
+      "technologies": [],
+      "notes": null,
+      "extra": {}
+    },
+    "status": "active",
+    "created_at": "2026-09-14T15:28:39.635820+00:00",
+    "updated_at": "2026-09-14T15:28:39.635833+00:00"
   }
 ]

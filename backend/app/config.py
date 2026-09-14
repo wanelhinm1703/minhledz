@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import os
 import pathlib
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
+
+# Load .env file from project root
+_env_path = pathlib.Path(__file__).resolve().parent.parent.parent / ".env"
+if _env_path.exists():
+    load_dotenv(_env_path)
 
 
 class Settings(BaseSettings):
@@ -17,7 +23,9 @@ class Settings(BaseSettings):
     KB_SQLITE_PATH: str = os.getenv("KB_SQLITE_PATH", "toolkit/data/kb.sqlite")
 
     # LLM Settings
-    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "auto")
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini")
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
@@ -34,3 +42,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+

@@ -9,22 +9,31 @@ import asyncio
 import pathlib
 from typing import AsyncGenerator, Dict, Any, List, Optional
 import httpx
+from dotenv import load_dotenv
+
+# Load .env file from project root
+_env_path = pathlib.Path(__file__).resolve().parent.parent.parent.parent / ".env"
+if _env_path.exists():
+    load_dotenv(_env_path)
 
 from backend.app.core.guardrails import check_exploit_intent, format_guardrail_refusal
 from backend.app.core.prompts import SYSTEM_PROMPT
 
 
+
 class LLMService:
-    """Multi-provider LLM service supporting OpenAI, Anthropic, Ollama, custom, and offline fallback."""
+    """Multi-provider LLM service supporting Google Gemini, OpenAI, Anthropic, Ollama, custom, and offline fallback."""
 
     def __init__(self):
         self.active_provider = self._detect_provider()
-        self.active_model = os.getenv("LLM_MODEL", "offline-security-copilot")
+        self.active_model = os.getenv("LLM_MODEL", "gemini-flash-lite-latest" if self.active_provider == "gemini" else "offline-security-copilot")
 
     def _detect_provider(self) -> str:
         prov = os.getenv("LLM_PROVIDER", "").lower()
-        if prov in ("openai", "anthropic", "ollama", "custom"):
+        if prov in ("gemini", "openai", "anthropic", "ollama", "custom"):
             return prov
+        if os.getenv("GEMINI_API_KEY"):
+            return "gemini"
         if os.getenv("OPENAI_API_KEY"):
             return "openai"
         if os.getenv("ANTHROPIC_API_KEY"):
@@ -35,6 +44,12 @@ class LLMService:
 
     def get_available_providers(self) -> List[Dict[str, Any]]:
         return [
+            {
+                "id": "gemini",
+                "name": "Google Gemini (Gemini Flash)",
+                "active": self.active_provider == "gemini",
+                "ready": bool(os.getenv("GEMINI_API_KEY")),
+            },
             {
                 "id": "offline",
                 "name": "Local Security Reasoning (Offline/Internal)",
@@ -68,15 +83,33 @@ class LLMService:
         ]
 
     def switch_provider(self, provider_id: str, model: Optional[str] = None) -> bool:
+        norm = provider_id.lower().strip()
+        alias_map = {
+            "gemini": "gemini",
+            "gemini-flash": "gemini",
+            "gemini-flash-latest": "gemini",
+            "gemini-flash-lite": "gemini",
+            "google-gemini": "gemini",
+            "google gemini": "gemini",
+            "gpt-4o": "openai",
+            "gpt-4o-mini": "openai",
+            "claude-3-5-sonnet": "anthropic",
+            "ollama-llama-3.1": "ollama",
+            "custom-local": "custom",
+            "offline": "offline",
+        }
+        resolved = alias_map.get(norm, norm)
         valid = [p["id"] for p in self.get_available_providers()]
-        if provider_id not in valid:
+        if resolved not in valid:
             return False
-        self.active_provider = provider_id
+        self.active_provider = resolved
         if model:
             self.active_model = model
-        elif provider_id == "openai":
+        elif resolved == "gemini":
+            self.active_model = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+        elif resolved == "openai":
             self.active_model = os.getenv("LLM_MODEL", "gpt-4o-mini")
-        elif provider_id == "ollama":
+        elif resolved == "ollama":
             self.active_model = os.getenv("LLM_MODEL", "llama3")
         return True
 
@@ -96,7 +129,15 @@ class LLMService:
                 await asyncio.sleep(0.01)
             return
 
-        if self.active_provider == "offline":
+        if self.active_provider == "gemini":
+            try:
+                async for chunk in self._stream_gemini(prompt, system_prompt, context_data):
+                    yield chunk
+            except Exception as e:
+                yield f"\n*[Gemini provider error: {e}. Chuyển sang chế độ Local Security Engine]*\n\n"
+                async for chunk in self._stream_offline(prompt, context_data):
+                    yield chunk
+        elif self.active_provider == "offline":
             async for chunk in self._stream_offline(prompt, context_data):
                 yield chunk
         else:
@@ -107,6 +148,89 @@ class LLMService:
                 yield f"\n*[Provider error: {e}. Chuyển sang chế độ Local Security Engine]*\n\n"
                 async for chunk in self._stream_offline(prompt, context_data):
                     yield chunk
+
+    async def _stream_gemini(
+        self, prompt: str, system_prompt: str, context_data: Optional[Dict[str, Any]]
+    ) -> AsyncGenerator[str, None]:
+        """Stream from Google Gemini API with automatic fallback to lite model if high demand."""
+        api_key = os.getenv("GEMINI_API_KEY", "")
+        if not api_key:
+            async for chunk in self._stream_offline(prompt, context_data):
+                yield chunk
+            return
+
+        evidence_summary = ""
+        if (context_data or {}).get("active_target"):
+            evidence_summary += f"\nActive Target: {context_data.get('active_target')}"
+        if (context_data or {}).get("correlations"):
+            for c in (context_data.get("correlations") or [])[:2]:
+                evidence_summary += f"\nCorrelated CVE: {c.get('cve_id')} (CVSS {c.get('cvss_score', 7.5)}) - {c.get('description', '')[:120]}"
+
+        contents_parts = []
+        if evidence_summary:
+            contents_parts.append({"text": f"[CONTEXT EVIDENCE & TARGET DATA]\n{evidence_summary}\n\n[USER INSTRUCTION]\n{prompt}"})
+        else:
+            contents_parts.append({"text": prompt})
+
+        payload = {
+            "system_instruction": {
+                "parts": [{"text": (system_prompt or SYSTEM_PROMPT) + "\nTrả lời bằng tiếng Việt chuyên nghiệp, bảo mật chuẩn mực, chi tiết và có cấu trúc Markdown đẹp mắt."}]
+            },
+            "contents": [{"parts": contents_parts}],
+            "generationConfig": {
+                "temperature": 0.2,
+                "maxOutputTokens": 2048,
+            }
+        }
+
+        models_to_try = [
+            self.active_model if self.active_model not in ("offline-security-copilot", "") else "gemini-flash-lite-latest",
+            "gemini-flash-lite-latest",
+            "gemini-flash-latest",
+            "gemini-2.5-flash-lite",
+        ]
+        unique_models = []
+        for m in models_to_try:
+            if m not in unique_models:
+                unique_models.append(m)
+
+        last_err = None
+        for model_name in unique_models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:streamGenerateContent?alt=sse&key={api_key}"
+            try:
+                async with httpx.AsyncClient(timeout=35.0) as client:
+                    async with client.stream("POST", url, json=payload) as response:
+                        if response.status_code == 200:
+                            async for line in response.aiter_lines():
+                                line = line.strip()
+                                if not line:
+                                    continue
+                                if line.startswith("data: "):
+                                    data_str = line[6:].strip()
+                                    try:
+                                        parsed = json.loads(data_str)
+                                        candidates = parsed.get("candidates", [])
+                                        if candidates:
+                                            parts = candidates[0].get("content", {}).get("parts", [])
+                                            for p in parts:
+                                                txt = p.get("text", "")
+                                                if txt:
+                                                    yield txt
+                                    except Exception:
+                                        continue
+                            return
+                        else:
+                            last_err = f"Model {model_name} HTTP {response.status_code}"
+                            continue
+            except Exception as e:
+                last_err = str(e)
+                continue
+
+        # If all remote models failed, fallback to offline reasoning
+        yield f"\n*[Lưu ý: Gemini API bận hoặc kết nối gián đoạn ({last_err}). Đã chuyển sang Local Security Engine]*\n\n"
+        async for chunk in self._stream_offline(prompt, context_data):
+            yield chunk
+
 
     async def _stream_external_llm(
         self, prompt: str, system_prompt: str, context_data: Optional[Dict[str, Any]]

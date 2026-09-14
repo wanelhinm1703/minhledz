@@ -77,17 +77,18 @@ export const Header: React.FC = () => {
           <span>Add Target</span>
         </button>
 
-        <div className="flex items-center space-x-2 text-xs bg-zinc-900 border border-zinc-800 px-2 py-1 rounded">
-          <span className="text-zinc-500">AI:</span>
+        <div className="flex items-center space-x-2 text-xs bg-zinc-900 border border-cyan-800/80 px-2 py-1 rounded">
+          <span className="text-cyan-400 font-semibold">AI:</span>
           <select
             value={selectedProvider}
             onChange={(e) => setSelectedProvider(e.target.value)}
-            className="bg-transparent text-zinc-300 focus:outline-none cursor-pointer"
+            className="bg-transparent text-cyan-200 focus:outline-none cursor-pointer font-medium"
           >
-            <option value="GPT-4o-mini">GPT-4o-mini</option>
-            <option value="Claude-3-5-Sonnet">Claude-3-5-Sonnet</option>
-            <option value="Ollama-Llama-3.1">Ollama (Llama-3.1)</option>
-            <option value="Custom-Local">Custom Local</option>
+            <option value="gemini" className="bg-zinc-900 text-cyan-300 font-bold">✨ Gemini Flash (Google)</option>
+            <option value="GPT-4o-mini" className="bg-zinc-900 text-zinc-300">GPT-4o-mini (OpenAI)</option>
+            <option value="Claude-3-5-Sonnet" className="bg-zinc-900 text-zinc-300">Claude-3-5-Sonnet</option>
+            <option value="Ollama-Llama-3.1" className="bg-zinc-900 text-zinc-300">Ollama (Llama-3.1)</option>
+            <option value="offline" className="bg-zinc-900 text-zinc-300">Local Offline Engine</option>
           </select>
         </div>
 

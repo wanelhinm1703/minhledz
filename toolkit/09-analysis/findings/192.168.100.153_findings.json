@@ -1,6 +1,6 @@
 {
   "target_id": "192.168.100.153",
-  "generated_at": "2026-09-14T15:07:03.837987+00:00",
+  "generated_at": "2026-09-14T15:29:27.334667+00:00",
   "total_findings": 1,
   "findings": [
     {
@@ -25,12 +25,12 @@
           "tool": "nmap",
           "file_path": "03-network/scans/target-192.168.100.153/nmap/structured/nmap_result.json",
           "matched_text": "Port 80/tcp open: Apache httpd 2.4.49 (Service: http)",
-          "timestamp": "2026-09-14T15:06:35.402714+00:00"
+          "timestamp": "2026-09-14T15:29:27.318192+00:00"
         }
       ],
       "id": "FIND-REPORT-TEST",
-      "created_at": "2026-09-14T15:04:00.334934+00:00",
-      "updated_at": "2026-09-14T15:07:03.833663+00:00"
+      "created_at": "2026-09-14T15:09:53.277222+00:00",
+      "updated_at": "2026-09-14T15:29:27.328262+00:00"
     }
   ]
 }

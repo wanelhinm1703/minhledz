@@ -64,7 +64,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     "[*] Knowledge Base ready: 539 CVEs | 52 CWEs loaded.",
   ],
   isTargetModalOpen: false,
-  selectedProvider: "GPT-4o-mini",
+  selectedProvider: "gemini",
   activeView: "editor",
 
   setTargets: (targets) => set({ targets }),
@@ -72,7 +72,14 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   setActiveTarget: (target) => set({ activeTarget: target }),
   setActiveView: (activeView) => set({ activeView }),
   setTargetModalOpen: (open) => set({ isTargetModalOpen: open }),
-  setSelectedProvider: (provider) => set({ selectedProvider: provider }),
+  setSelectedProvider: (provider) => {
+    set({ selectedProvider: provider });
+    fetch('/api/llm/switch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider }),
+    }).catch((e) => console.error('Failed to sync provider with backend', e));
+  },
 
   appendTerminalLog: (log) =>
     set((state) => ({ terminalLogs: [...state.terminalLogs, log] })),

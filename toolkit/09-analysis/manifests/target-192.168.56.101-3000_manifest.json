@@ -3,7 +3,7 @@
   "target_input": "http://192.168.56.101:3000",
   "normalized_value": "http://192.168.56.101:3000/",
   "campaign_id": "lab-local",
-  "timestamp": "2026-09-14T15:07:08.149135+00:00",
+  "timestamp": "2026-09-14T15:29:32.537733+00:00",
   "capabilities": [
     "web",
     "http_probing",
