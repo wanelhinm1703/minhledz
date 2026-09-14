@@ -11,6 +11,8 @@ def main():
         print("  python run.py setup")
         print("  python run.py scan TARGET=<target>")
         print("  python run.py pipeline TARGET=<target>")
+        print("  python run.py ingest")
+        print("  python run.py kb-stats")
         print("  python run.py test")
         print("  python run.py dev")
         return
@@ -33,6 +35,13 @@ def main():
         script = "targets.py" if cmd == "scan" else "pipeline_runner.py"
         args = ["scan", "--target", target] if cmd == "scan" else [target]
         res = subprocess.run([sys.executable, str(root / "toolkit" / "scripts" / script)] + args)
+        sys.exit(res.returncode)
+    elif cmd == "ingest":
+        update_flag = ["--update"] if "--update" in sys.argv else []
+        res = subprocess.run([sys.executable, "-m", "backend.app.ingest.run"] + update_flag)
+        sys.exit(res.returncode)
+    elif cmd == "kb-stats":
+        res = subprocess.run([sys.executable, str(root / "backend" / "app" / "storage" / "db.py")])
         sys.exit(res.returncode)
     elif cmd == "test":
         res = subprocess.run([sys.executable, "-m", "pytest", "backend/tests", "-v"])

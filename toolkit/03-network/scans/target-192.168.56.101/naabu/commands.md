@@ -24,3 +24,27 @@
 - **Error**: `None`
 
 ---
+
+## Scan Execution - 2026-09-14T07:29:37.025133+00:00
+- **Target**: `192.168.56.101`
+- **Tool**: `naabu`
+- **Command**: `naabu -host 192.168.56.101 -top-ports 100 -o C:\Users\DUC_THUAN\.gemini\antigravity\scratch\ai-pentest-copilot\toolkit\03-network\scans\target-192.168.56.101\naabu\raw\naabu_raw.txt`
+- **Arguments**: `-host 192.168.56.101 -top-ports 100 -o C:\Users\DUC_THUAN\.gemini\antigravity\scratch\ai-pentest-copilot\toolkit\03-network\scans\target-192.168.56.101\naabu\raw\naabu_raw.txt`
+- **Exit Code**: `0`
+- **Duration**: `0.00s`
+- **Output Path**: `C:\Users\DUC_THUAN\.gemini\antigravity\scratch\ai-pentest-copilot\toolkit\03-network\scans\target-192.168.56.101\naabu\raw\naabu_raw.txt`
+- **Error**: `None`
+
+---
+
+## Scan Execution - 2026-09-14T07:30:04.619880+00:00
+- **Target**: `192.168.56.101`
+- **Tool**: `naabu`
+- **Command**: `naabu -host 192.168.56.101 -top-ports 100 -o C:\Users\DUC_THUAN\.gemini\antigravity\scratch\ai-pentest-copilot\toolkit\03-network\scans\target-192.168.56.101\naabu\raw\naabu_raw.txt`
+- **Arguments**: `-host 192.168.56.101 -top-ports 100 -o C:\Users\DUC_THUAN\.gemini\antigravity\scratch\ai-pentest-copilot\toolkit\03-network\scans\target-192.168.56.101\naabu\raw\naabu_raw.txt`
+- **Exit Code**: `0`
+- **Duration**: `0.00s`
+- **Output Path**: `C:\Users\DUC_THUAN\.gemini\antigravity\scratch\ai-pentest-copilot\toolkit\03-network\scans\target-192.168.56.101\naabu\raw\naabu_raw.txt`
+- **Error**: `None`
+
+---
