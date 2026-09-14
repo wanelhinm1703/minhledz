@@ -47,12 +47,16 @@ class ReportGenerator:
     def get_report(self, target_id: str) -> Optional[Dict[str, Any]]:
         clean_target = target_id.replace(":", "-").replace("/", "-")
         md_path = self.reports_dir / f"{clean_target}_report.md"
+        html_path = self.reports_dir / f"{clean_target}_report.html"
         if not md_path.exists():
             return None
+        html_text = html_path.read_text(encoding="utf-8") if html_path.exists() else ""
         return {
             "target_id": target_id,
             "markdown_content": md_path.read_text(encoding="utf-8"),
+            "html_content": html_text,
             "markdown_path": str(md_path.relative_to(self.root_dir)).replace("\\", "/"),
+            "html_path": str(html_path.relative_to(self.root_dir)).replace("\\", "/") if html_path.exists() else "",
         }
 
     def list_reports(self) -> List[Dict[str, Any]]:

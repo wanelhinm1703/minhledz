@@ -7,9 +7,8 @@ import {
   RefreshCw,
   Sparkles,
   ShieldCheck,
-  AlertOctagon,
-  Calendar,
-  ExternalLink,
+  Layout,
+  Code,
 } from 'lucide-react'
 import { useWorkspaceStore } from '../../store/workspaceStore'
 
@@ -18,6 +17,7 @@ export const ReportViewer: React.FC = () => {
   const [reportData, setReportData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [viewFormat, setViewFormat] = useState<'markdown' | 'html'>('markdown');
 
   const fetchReport = async () => {
     if (!activeTarget) return;
@@ -81,6 +81,8 @@ export const ReportViewer: React.FC = () => {
     document.body.removeChild(a);
   };
 
+  const targetKey = activeTarget ? (activeTarget.normalized_value || activeTarget.name) : '';
+
   return (
     <div className="flex-1 flex flex-col bg-[#141416] text-zinc-300 overflow-hidden select-none">
       {/* Top Banner */}
@@ -93,6 +95,33 @@ export const ReportViewer: React.FC = () => {
           <span className="text-xs px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 font-normal">
             Target: <strong className="text-emerald-400">{activeTarget?.name || 'None'}</strong>
           </span>
+
+          {reportData && (
+            <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded p-0.5 text-xs">
+              <button
+                onClick={() => setViewFormat('markdown')}
+                className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] transition ${
+                  viewFormat === 'markdown'
+                    ? 'bg-zinc-800 text-cyan-400 font-semibold'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Code className="w-3 h-3" />
+                <span>Markdown</span>
+              </button>
+              <button
+                onClick={() => setViewFormat('html')}
+                className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] transition ${
+                  viewFormat === 'html'
+                    ? 'bg-zinc-800 text-cyan-400 font-semibold'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Layout className="w-3 h-3" />
+                <span>Styled HTML</span>
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -126,18 +155,28 @@ export const ReportViewer: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 max-w-5xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto p-4 w-full h-full">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-64 space-y-3 text-zinc-400">
             <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
             <span className="text-xs">Đang tổng hợp dữ liệu và biên soạn báo cáo...</span>
           </div>
-        ) : reportData?.markdown_content ? (
-          <div className="bg-[#101012] border border-zinc-800 rounded-xl p-8 shadow-2xl space-y-6 text-zinc-300 font-sans text-xs leading-relaxed">
-            <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-zinc-300 bg-transparent">
-              {reportData.markdown_content}
-            </pre>
-          </div>
+        ) : reportData ? (
+          viewFormat === 'html' ? (
+            <div className="w-full h-full rounded-xl overflow-hidden border border-zinc-800 shadow-2xl bg-[#0f172a]">
+              <iframe
+                src={`/api/reports/${encodeURIComponent(targetKey)}/html`}
+                title="HTML Report Preview"
+                className="w-full h-full border-0"
+              />
+            </div>
+          ) : (
+            <div className="max-w-5xl mx-auto bg-[#101012] border border-zinc-800 rounded-xl p-8 shadow-2xl space-y-6 text-zinc-300 font-sans text-xs leading-relaxed">
+              <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-zinc-300 bg-transparent">
+                {reportData.markdown_content}
+              </pre>
+            </div>
+          )
         ) : (
           <div className="flex flex-col items-center justify-center h-80 space-y-4 text-center">
             <ShieldCheck className="w-12 h-12 text-zinc-600" />

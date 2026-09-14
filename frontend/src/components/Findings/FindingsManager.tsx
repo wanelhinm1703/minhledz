@@ -12,7 +12,10 @@ import {
   ExternalLink,
   ChevronRight,
   ShieldCheck,
-  Filter,
+  Play,
+  Terminal,
+  Copy,
+  Check,
 } from 'lucide-react'
 import { useWorkspaceStore } from '../../store/workspaceStore'
 
@@ -40,6 +43,23 @@ export interface Finding {
   updated_at: string;
 }
 
+interface VerificationStep {
+  step_number: number;
+  name: string;
+  description: string;
+  command: string;
+  is_safe_readonly: boolean;
+  expected_evidence: string;
+  remediation_check?: string;
+}
+
+interface VerificationPlan {
+  finding_id: string;
+  target_id: string;
+  title: string;
+  steps: VerificationStep[];
+}
+
 export const FindingsManager: React.FC = () => {
   const { activeTarget, openFile, setActiveView } = useWorkspaceStore();
   const [findings, setFindings] = useState<Finding[]>([]);
@@ -48,6 +68,13 @@ export const FindingsManager: React.FC = () => {
   const [search, setSearch] = useState('');
   const [severityFilter, setSeverityFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+
+  // Verification Plan state
+  const [verificationPlan, setVerificationPlan] = useState<VerificationPlan | null>(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [executingStep, setExecutingStep] = useState<number | null>(null);
+  const [stepOutputs, setStepOutputs] = useState<Record<number, { output: string; isVuln: boolean }>>({});
+  const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
 
   const fetchFindings = async () => {
     setLoading(true);
@@ -74,6 +101,25 @@ export const FindingsManager: React.FC = () => {
   useEffect(() => {
     fetchFindings();
   }, [activeTarget]);
+
+  // Load verification plan when finding is selected
+  useEffect(() => {
+    if (!selectedFinding) {
+      setVerificationPlan(null);
+      setStepOutputs({});
+      return;
+    }
+
+    setPlanLoading(true);
+    setStepOutputs({});
+    fetch(`/api/verification/plan/${selectedFinding.id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((plan) => {
+        setVerificationPlan(plan);
+      })
+      .catch((err) => console.error('Failed to load plan', err))
+      .finally(() => setPlanLoading(false));
+  }, [selectedFinding]);
 
   const handleGenerate = async () => {
     if (!activeTarget) return;
@@ -112,13 +158,43 @@ export const FindingsManager: React.FC = () => {
     }
   };
 
+  const handleExecuteStep = async (step: VerificationStep) => {
+    setExecutingStep(step.step_number);
+    try {
+      const res = await fetch('/api/verification/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: step.command }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setStepOutputs((prev) => ({
+          ...prev,
+          [step.step_number]: {
+            output: result.output,
+            isVuln: result.is_vulnerable_indicated,
+          },
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to execute check', err);
+    } finally {
+      setExecutingStep(null);
+    }
+  };
+
+  const handleCopyCmd = (cmd: string) => {
+    navigator.clipboard.writeText(cmd);
+    setCopiedCmd(cmd);
+    setTimeout(() => setCopiedCmd(null), 2000);
+  };
+
   const handleOpenEvidence = (ev: EvidenceItem) => {
     const filename = ev.file_path.split('/').pop() || 'evidence';
     openFile({ name: filename, rel_path: ev.file_path });
     setActiveView('editor');
   };
 
-  // Severity color mapping
   const getSeverityBadge = (sev: string) => {
     switch (sev) {
       case 'CRITICAL':
@@ -165,7 +241,7 @@ export const FindingsManager: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col bg-[#141416] text-zinc-300 overflow-hidden select-none">
-      {/* Top Banner: Stats and Generation */}
+      {/* Top Banner */}
       <div className="p-3 border-b border-[#27272a] bg-[#101012] flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-1.5 text-zinc-200 font-bold text-xs">
@@ -252,10 +328,10 @@ export const FindingsManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Split: Findings Table (Left) + Detail Inspector (Right) */}
+      {/* Main Split */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Findings List */}
-        <div className="w-1/2 border-r border-[#27272a] overflow-y-auto p-2 space-y-1.5">
+        {/* Left: Findings List */}
+        <div className="w-5/12 border-r border-[#27272a] overflow-y-auto p-2 space-y-1.5">
           {filtered.length === 0 ? (
             <div className="p-8 text-center text-zinc-500 text-xs">
               Chưa có finding nào cho tiêu chí đã chọn. Bấm "Auto-Generate from Scans" để tổng hợp chứng cứ từ kết quả scan.
@@ -296,8 +372,8 @@ export const FindingsManager: React.FC = () => {
           )}
         </div>
 
-        {/* Detail Panel */}
-        <div className="w-1/2 overflow-y-auto p-4 bg-[#121214]">
+        {/* Right: Detailed Inspector & Verification Runner */}
+        <div className="w-7/12 overflow-y-auto p-4 bg-[#121214]">
           {selectedFinding ? (
             <div className="space-y-4">
               {/* Header */}
@@ -343,6 +419,94 @@ export const FindingsManager: React.FC = () => {
                 </div>
               </div>
 
+              {/* Safe Verification Execution Panel (NEW M6) */}
+              <div className="space-y-2 border border-cyan-900/60 bg-cyan-950/20 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-bold text-cyan-400 flex items-center space-x-1.5 uppercase tracking-wider">
+                    <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                    <span>Kế hoạch kiểm chứng an toàn (Safe Read-Only Verification)</span>
+                  </div>
+                  {planLoading && <RefreshCw className="w-3.5 h-3.5 animate-spin text-cyan-400" />}
+                </div>
+
+                {verificationPlan ? (
+                  <div className="space-y-2 mt-2">
+                    {verificationPlan.steps.map((step) => {
+                      const result = stepOutputs[step.step_number];
+                      const isRunning = executingStep === step.step_number;
+
+                      return (
+                        <div
+                          key={step.step_number}
+                          className="bg-[#0e141e] border border-cyan-950/80 rounded p-2.5 space-y-1.5 text-xs"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-zinc-200">
+                              {step.step_number}. {step.name}
+                            </span>
+                            <div className="flex items-center space-x-1.5">
+                              <button
+                                onClick={() => handleCopyCmd(step.command)}
+                                className="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] flex items-center space-x-1"
+                              >
+                                {copiedCmd === step.command ? (
+                                  <Check className="w-2.5 h-2.5 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-2.5 h-2.5" />
+                                )}
+                                <span>Copy</span>
+                              </button>
+                              <button
+                                onClick={() => handleExecuteStep(step)}
+                                disabled={isRunning}
+                                className="px-2 py-0.5 rounded bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 text-white text-[10px] font-medium flex items-center space-x-1 transition"
+                              >
+                                {isRunning ? (
+                                  <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                                ) : (
+                                  <Play className="w-2.5 h-2.5" />
+                                )}
+                                <span>{isRunning ? 'Checking...' : 'Run Safe Check'}</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="text-[11px] text-zinc-400">{step.description}</div>
+
+                          <div className="bg-black/60 p-1.5 rounded font-mono text-[10px] text-cyan-300 flex items-center justify-between">
+                            <code>{step.command}</code>
+                          </div>
+
+                          {/* Live Execution Output */}
+                          {result && (
+                            <div className="mt-1.5 pt-1.5 border-t border-zinc-800 space-y-1">
+                              <div className="flex items-center justify-between text-[10px]">
+                                <span className="font-semibold text-zinc-400">Terminal Output:</span>
+                                {result.isVuln ? (
+                                  <span className="text-red-400 font-bold flex items-center space-x-1">
+                                    <AlertTriangle className="w-3 h-3 text-red-400" />
+                                    <span>Vulnerability Indicated!</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-emerald-400 font-medium">Safe Response</span>
+                                )}
+                              </div>
+                              <pre className="bg-zinc-950 p-2 rounded text-[10px] font-mono text-zinc-300 whitespace-pre-wrap border border-zinc-800">
+                                {result.output}
+                              </pre>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-zinc-500 py-2">
+                    Đang chuẩn bị kế hoạch kiểm chứng an toàn...
+                  </div>
+                )}
+              </div>
+
               {/* Description */}
               <div className="space-y-1">
                 <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Mô tả chi tiết</div>
@@ -351,7 +515,7 @@ export const FindingsManager: React.FC = () => {
                 </div>
               </div>
 
-              {/* Evidence Chain (Immutable raw files) */}
+              {/* Evidence Chain */}
               <div className="space-y-2">
                 <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center justify-between">
                   <span>Chuỗi chứng cứ thực nghiệm (Evidence Chain)</span>
@@ -401,7 +565,7 @@ export const FindingsManager: React.FC = () => {
             </div>
           ) : (
             <div className="p-8 text-center text-zinc-500 text-xs">
-              Chọn một finding bên trái để xem chi tiết chứng cứ và khuyến nghị khắc phục.
+              Chọn một finding bên trái để xem chi tiết chứng cứ và kế hoạch kiểm chứng an toàn.
             </div>
           )}
         </div>
