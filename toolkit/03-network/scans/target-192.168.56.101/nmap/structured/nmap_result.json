@@ -4,8 +4,8 @@
     "target": "192.168.56.101",
     "command": "nmap -sV -sC -Pn -T4 -F 192.168.56.101 -oX C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\03-network\\scans\\target-192.168.56.101\\nmap\\raw\\nmap_raw.xml -oN C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\03-network\\scans\\target-192.168.56.101\\nmap\\normal\\nmap_normal.txt",
     "arguments": "-sV -sC -Pn -T4 -F 192.168.56.101 -oX C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\03-network\\scans\\target-192.168.56.101\\nmap\\raw\\nmap_raw.xml -oN C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\03-network\\scans\\target-192.168.56.101\\nmap\\normal\\nmap_normal.txt",
-    "timestamp": "2026-09-14T07:50:00.182173+00:00",
-    "duration_seconds": 0.0006830692291259766,
+    "timestamp": "2026-09-14T07:55:53.553698+00:00",
+    "duration_seconds": 0.0008518695831298828,
     "exit_code": 0
   },
   "hosts": [

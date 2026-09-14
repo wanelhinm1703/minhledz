@@ -2,13 +2,14 @@ import React, { useEffect } from 'react'
 import { Header } from './components/Layout/Header'
 import { ExplorerPanel } from './components/Explorer/ExplorerPanel'
 import { MainPanel } from './components/Editor/MainPanel'
+import { FindingsManager } from './components/Findings/FindingsManager'
 import { ChatPanel } from './components/Chat/ChatPanel'
 import { TerminalPanel } from './components/Terminal/TerminalPanel'
 import { TargetInputModal } from './components/Target/TargetInputModal'
 import { useWorkspaceStore } from './store/workspaceStore'
 
 export const App: React.FC = () => {
-  const { fetchInitialData } = useWorkspaceStore();
+  const { fetchInitialData, activeView } = useWorkspaceStore();
 
   useEffect(() => {
     fetchInitialData();
@@ -20,8 +21,14 @@ export const App: React.FC = () => {
       <div className="flex-1 flex overflow-hidden">
         <ExplorerPanel />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <MainPanel />
-          <TerminalPanel />
+          {activeView === 'findings' ? (
+            <FindingsManager />
+          ) : (
+            <>
+              <MainPanel />
+              <TerminalPanel />
+            </>
+          )}
         </div>
         <ChatPanel />
       </div>

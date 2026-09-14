@@ -37,10 +37,12 @@ interface WorkspaceState {
   terminalLogs: string[];
   isTargetModalOpen: boolean;
   selectedProvider: string;
+  activeView: 'editor' | 'findings';
   
   setTargets: (targets: TargetItem[]) => void;
   setScans: (scans: ScanRecord[]) => void;
   setActiveTarget: (target: TargetItem | null) => void;
+  setActiveView: (view: 'editor' | 'findings') => void;
   openFile: (file: { name: string; rel_path: string }) => Promise<void>;
   closeTab: (id: string) => void;
   setActiveTab: (id: string) => void;
@@ -63,10 +65,12 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   ],
   isTargetModalOpen: false,
   selectedProvider: "GPT-4o-mini",
+  activeView: "editor",
 
   setTargets: (targets) => set({ targets }),
   setScans: (scans) => set({ scans }),
   setActiveTarget: (target) => set({ activeTarget: target }),
+  setActiveView: (activeView) => set({ activeView }),
   setTargetModalOpen: (open) => set({ isTargetModalOpen: open }),
   setSelectedProvider: (provider) => set({ selectedProvider: provider }),
 

@@ -4,8 +4,8 @@
     "target": "http://192.168.56.101:3000/",
     "command": "httpx -u http://192.168.56.101:3000/ -status-code -title -tech-detect -web-server -json -o C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\04-web\\scans\\target-192.168.56.101-3000\\httpx\\raw\\httpx_raw.jsonl",
     "arguments": "-u http://192.168.56.101:3000/ -status-code -title -tech-detect -web-server -json -o C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\04-web\\scans\\target-192.168.56.101-3000\\httpx\\raw\\httpx_raw.jsonl",
-    "timestamp": "2026-09-14T07:50:00.151763+00:00",
-    "duration_seconds": 0.0004374980926513672,
+    "timestamp": "2026-09-14T07:55:53.522633+00:00",
+    "duration_seconds": 0.0005884170532226562,
     "exit_code": 0
   },
   "results": [

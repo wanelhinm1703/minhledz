@@ -1,0 +1,53 @@
+{
+  "target_id": "192.168.56.101-3000",
+  "generated_at": "2026-09-14T07:55:49.745263+00:00",
+  "total_findings": 2,
+  "findings": [
+    {
+      "target_id": "192.168.56.101-3000",
+      "title": "Nuclei: Apache 2.4.49 - Path Traversal & Remote Code Execution",
+      "cve_id": "CVE-2021-41773",
+      "cwe_id": null,
+      "cvss_score": 7.5,
+      "cvss_severity": "HIGH",
+      "status": "CANDIDATE",
+      "affected_asset": "http://192.168.56.101:3000//icons/.%%32%65/.%%32%65/etc/passwd",
+      "description": "Nuclei scanner ph\u00e1t hi\u1ec7n d\u1ea5u hi\u1ec7u l\u1ed7 h\u1ed5ng th\u00f4ng qua template `CVE-2021-41773`.\nPh\u00e1t hi\u1ec7n t\u1ea1i: `http://192.168.56.101:3000//icons/.%%32%65/.%%32%65/etc/passwd`",
+      "remediation": "Ki\u1ec3m tra l\u1ea1i c\u1ea5u h\u00ecnh endpoint ho\u1eb7c \u00e1p d\u1ee5ng b\u1ea3n v\u00e1 t\u01b0\u01a1ng \u1ee9ng.",
+      "evidence_chain": [
+        {
+          "tool": "nuclei",
+          "file_path": "05-vulnerability/scans/target-192.168.56.101-3000/nuclei/structured/nuclei_result.json",
+          "matched_text": "Template CVE-2021-41773 [HIGH] matched at http://192.168.56.101:3000//icons/.%%32%65/.%%32%65/etc/passwd",
+          "timestamp": "2026-09-14T07:52:55.518946+00:00"
+        }
+      ],
+      "id": "FIND-192-168-56-101-3000-C23D9D3F",
+      "created_at": "2026-09-14T07:52:55.519689+00:00",
+      "updated_at": "2026-09-14T07:55:49.736124+00:00"
+    },
+    {
+      "target_id": "192.168.56.101-3000",
+      "title": "Nuclei: Wappalyzer Technology Detection",
+      "cve_id": null,
+      "cwe_id": null,
+      "cvss_score": 5.0,
+      "cvss_severity": "MEDIUM",
+      "status": "CANDIDATE",
+      "affected_asset": "http://192.168.56.101:3000/",
+      "description": "Nuclei scanner ph\u00e1t hi\u1ec7n d\u1ea5u hi\u1ec7u l\u1ed7 h\u1ed5ng th\u00f4ng qua template `tech-detect`.\nPh\u00e1t hi\u1ec7n t\u1ea1i: `http://192.168.56.101:3000/`",
+      "remediation": "Ki\u1ec3m tra l\u1ea1i c\u1ea5u h\u00ecnh endpoint ho\u1eb7c \u00e1p d\u1ee5ng b\u1ea3n v\u00e1 t\u01b0\u01a1ng \u1ee9ng.",
+      "evidence_chain": [
+        {
+          "tool": "nuclei",
+          "file_path": "05-vulnerability/scans/target-192.168.56.101-3000/nuclei/structured/nuclei_result.json",
+          "matched_text": "Template tech-detect [INFO] matched at http://192.168.56.101:3000/",
+          "timestamp": "2026-09-14T07:52:55.522895+00:00"
+        }
+      ],
+      "id": "FIND-192-168-56-101-3000-F48C3B95",
+      "created_at": "2026-09-14T07:52:55.523398+00:00",
+      "updated_at": "2026-09-14T07:55:49.740708+00:00"
+    }
+  ]
+}
