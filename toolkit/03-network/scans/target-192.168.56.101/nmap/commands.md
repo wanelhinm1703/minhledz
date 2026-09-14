@@ -96,3 +96,15 @@
 - **Error**: `None`
 
 ---
+
+## Scan Execution - 2026-09-14T07:50:00.181471+00:00
+- **Target**: `192.168.56.101`
+- **Tool**: `nmap`
+- **Command**: `nmap -sV -sC -Pn -T4 -F 192.168.56.101 -oX C:\Users\DUC_THUAN\.gemini\antigravity\scratch\ai-pentest-copilot\toolkit\03-network\scans\target-192.168.56.101\nmap\raw\nmap_raw.xml -oN C:\Users\DUC_THUAN\.gemini\antigravity\scratch\ai-pentest-copilot\toolkit\03-network\scans\target-192.168.56.101\nmap\normal\nmap_normal.txt`
+- **Arguments**: `-sV -sC -Pn -T4 -F 192.168.56.101 -oX C:\Users\DUC_THUAN\.gemini\antigravity\scratch\ai-pentest-copilot\toolkit\03-network\scans\target-192.168.56.101\nmap\raw\nmap_raw.xml -oN C:\Users\DUC_THUAN\.gemini\antigravity\scratch\ai-pentest-copilot\toolkit\03-network\scans\target-192.168.56.101\nmap\normal\nmap_normal.txt`
+- **Exit Code**: `0`
+- **Duration**: `0.00s`
+- **Output Path**: `C:\Users\DUC_THUAN\.gemini\antigravity\scratch\ai-pentest-copilot\toolkit\03-network\scans\target-192.168.56.101\nmap\raw\nmap_raw.xml`
+- **Error**: `None`
+
+---

@@ -1,30 +1,34 @@
+"""FastAPI application entry point with REST endpoints and WebSocket chat."""
+
 from __future__ import annotations
 
-import pathlib
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from backend.app.config import settings
-from backend.app.storage.db import db
-from backend.app.api import health, vulnerabilities, targets, scans, recon
+from backend.app.api.health import router as health_router
+from backend.app.api.vulnerabilities import router as vuln_router
+from backend.app.api.recon import router as recon_router
+from backend.app.api.targets import router as targets_router
+from backend.app.api.scans import router as scans_router
+from backend.app.api.chat import router as chat_router
+from backend.app.api.llm import router as llm_router
+from backend.app.ws.chat import ws_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Ensure database schema is initialized on startup
-    db.init_db()
+    # Startup hooks
     yield
+    # Shutdown hooks
 
 
 app = FastAPI(
-    title="AI-Pentest Copilot API",
-    description="Security Workbench + AI Copilot + IDE Chat + Vulnerability Knowledge Base API",
-    version=settings.VERSION,
+    title="AI-Pentest Copilot Backend",
+    version="1.0.0",
+    description="Knowledge Base, Dynamic Target Recon & RAG Copilot API",
     lifespan=lifespan,
 )
 
-# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,18 +37,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register Routers
-app.include_router(health.router, prefix=settings.API_V1_STR)
-app.include_router(vulnerabilities.router, prefix=settings.API_V1_STR)
-app.include_router(targets.router, prefix=settings.API_V1_STR)
-app.include_router(scans.router, prefix=settings.API_V1_STR)
-app.include_router(recon.router, prefix=settings.API_V1_STR)
+# Register REST Routers
+app.include_router(health_router, prefix="/api")
+app.include_router(vuln_router, prefix="/api")
+app.include_router(recon_router, prefix="/api")
+app.include_router(targets_router, prefix="/api")
+app.include_router(scans_router, prefix="/api")
+app.include_router(chat_router, prefix="/api/chat")
+app.include_router(llm_router, prefix="/api/llm")
+
+# Register WebSocket Routers
+app.include_router(ws_router)
 
 
-@app.get("/")
-def root():
-    return {
-        "message": "AI-Pentest Copilot Backend API is running.",
-        "docs": "/docs",
-        "health": f"{settings.API_V1_STR}/health",
-    }
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "service": "ai-pentest-copilot-backend"}
