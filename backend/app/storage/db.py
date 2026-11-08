@@ -1,4 +1,3 @@
-import os
 import pathlib
 import sqlite3
 import sys
@@ -8,9 +7,7 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from typing import Any, Dict, List, Optional
 from backend.app.config import settings
-
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS cve (
@@ -23,6 +20,10 @@ CREATE TABLE IF NOT EXISTS cve (
     cvss_v3_severity TEXT,
     cvss_v4_score REAL,
     cvss_v4_vector TEXT,
+    cvss_v4_severity TEXT,
+    epss_score REAL DEFAULT 0.0,
+    epss_percentile REAL DEFAULT 0.0,
+    is_cisa_kev INTEGER DEFAULT 0,
     cwe_ids TEXT,
     references_json TEXT,
     source_url TEXT NOT NULL,
@@ -92,7 +93,7 @@ CREATE INDEX IF NOT EXISTS idx_product_version ON product_version_index(vendor, 
 
 
 class Database:
-    def __init__(self, db_path: Optional[pathlib.Path] = None):
+    def __init__(self, db_path: pathlib.Path | None = None):
         self.db_path = db_path or settings.get_kb_db_path()
         self.init_db()
 
@@ -104,16 +105,33 @@ class Database:
     def init_db(self):
         with self.get_connection() as conn:
             conn.executescript(SCHEMA_SQL)
+            cursor = conn.cursor()
+            for col, col_type in [
+                ("cvss_v4_severity", "TEXT"),
+                ("epss_score", "REAL DEFAULT 0.0"),
+                ("epss_percentile", "REAL DEFAULT 0.0"),
+                ("is_cisa_kev", "INTEGER DEFAULT 0"),
+            ]:
+                try:
+                    cursor.execute(f"ALTER TABLE cve ADD COLUMN {col} {col_type}")
+                except Exception:
+                    pass
             conn.commit()
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         with self.get_connection() as conn:
             cve_count = conn.execute("SELECT COUNT(*) FROM cve").fetchone()[0]
-            affected_count = conn.execute("SELECT COUNT(*) FROM cve_affected").fetchone()[0]
+            affected_count = conn.execute(
+                "SELECT COUNT(*) FROM cve_affected"
+            ).fetchone()[0]
             cwe_count = conn.execute("SELECT COUNT(*) FROM cwe").fetchone()[0]
-            mitre_count = conn.execute("SELECT COUNT(*) FROM mitre_technique").fetchone()[0]
+            mitre_count = conn.execute(
+                "SELECT COUNT(*) FROM mitre_technique"
+            ).fetchone()[0]
             kev_count = conn.execute("SELECT COUNT(*) FROM cisa_kev").fetchone()[0]
-            idx_count = conn.execute("SELECT COUNT(*) FROM product_version_index").fetchone()[0]
+            idx_count = conn.execute(
+                "SELECT COUNT(*) FROM product_version_index"
+            ).fetchone()[0]
 
         return {
             "cve_count": cve_count,

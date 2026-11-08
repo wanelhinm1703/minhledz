@@ -2,13 +2,19 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import os
 import pathlib
 import shutil
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
+
+REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from toolkit.scripts.scan_status import create_scan_status, save_scan_status
 
 
 def generate_mock_nmap_xml(target_host: str, port: int | None = None) -> str:
@@ -71,7 +77,7 @@ def generate_mock_nmap_normal(target_host: str, port: int | None = None) -> str:
         product = "OpenSSH 8.2p1"
 
     now_str = datetime.now().ctime()
-    return f'''# Nmap 7.94 scan initiated {now_str} as: nmap -sV -sC -Pn -T4 -p {target_port} {target_host}
+    return f"""# Nmap 7.94 scan initiated {now_str} as: nmap -sV -sC -Pn -T4 -p {target_port} {target_host}
 Nmap scan report for {target_host}
 Host is up (0.0015s latency).
 
@@ -81,7 +87,7 @@ PORT     STATE SERVICE VERSION
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 # Nmap done at {now_str} -- 1 IP address (1 host up) scanned in 2.15 seconds
-'''
+"""
 
 
 def append_command_log(
@@ -96,7 +102,7 @@ def append_command_log(
     error: str | None = None,
 ):
     timestamp = datetime.now(timezone.utc).isoformat()
-    entry = f'''
+    entry = f"""
 ## Scan Execution - {timestamp}
 - **Target**: `{target}`
 - **Tool**: `{tool}`
@@ -105,14 +111,14 @@ def append_command_log(
 - **Exit Code**: `{exit_code}`
 - **Duration**: `{duration:.2f}s`
 - **Output Path**: `{output_path}`
-- **Error**: `{error or 'None'}`
+- **Error**: `{error or "None"}`
 
 ---
-'''
+"""
     if not log_path.exists():
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        log_path.write_text("# Nmap Command Execution Audit Log\n\n", encoding="utf-8")
-    
+        log_path.write_text("# Command Execution Audit Log\n\n", encoding="utf-8")
+
     with open(log_path, "a", encoding="utf-8") as f:
         f.write(entry)
 
@@ -149,26 +155,38 @@ def run_nmap_scan(
 
     raw_dir = scan_dir / "raw"
     normal_dir = scan_dir / "normal"
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    normal_dir.mkdir(parents=True, exist_ok=True)
-
-    raw_xml_path = raw_dir / "nmap_raw.xml"
-    normal_txt_path = normal_dir / "nmap_normal.txt"
+    simulated_dir = scan_dir / "simulated"
     commands_log = scan_dir / "commands.md"
 
     port_arg = f"-p {port}" if port else "-F"
     script_arg = f" --script={scripts}" if scripts else ""
-    nmap_args = f"-sV -Pn -T4 {port_arg}{script_arg} {target_host} -oX {raw_xml_path} -oN {normal_txt_path}"
-    command_str = f"nmap {nmap_args}"
 
     nmap_binary = find_nmap_binary()
     force_sim = simulate or (os.getenv("SIMULATE_SCANS", "false").lower() == "true")
 
+    started_at = datetime.now(timezone.utc).isoformat()
     start_time = time.time()
     exit_code = 0
     error_msg = None
+    reason = None
+    warnings = []
+    errors = []
+    mode = "real"
+    raw_xml_path: pathlib.Path | None = None
+    normal_txt_path: pathlib.Path | None = None
+    rel_raw_path: str | None = None
+    finding_count = 0
 
     if nmap_binary and not force_sim:
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        normal_dir.mkdir(parents=True, exist_ok=True)
+        raw_xml_path = raw_dir / "nmap_raw.xml"
+        normal_txt_path = normal_dir / "nmap_normal.txt"
+        rel_raw_path = "raw/nmap_raw.xml"
+
+        nmap_args = f"-sV -Pn -T4 {port_arg}{script_arg} {target_host} -oX {raw_xml_path} -oN {normal_txt_path}"
+        command_str = f"nmap {nmap_args}"
+
         try:
             cmd = [nmap_binary, "-sV", "-Pn", "-T4"]
             if port:
@@ -177,22 +195,90 @@ def run_nmap_scan(
                 cmd.append("-F")
             if scripts:
                 cmd.append(f"--script={scripts}")
-            cmd.extend([target_host, "-oX", str(raw_xml_path), "-oN", str(normal_txt_path)])
-            
+            cmd.extend(
+                [target_host, "-oX", str(raw_xml_path), "-oN", str(normal_txt_path)]
+            )
+
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
             exit_code = res.returncode
             if exit_code != 0:
-                error_msg = res.stderr
+                mode = "failed"
+                error_msg = res.stderr or f"Exit code {exit_code}"
+                errors.append(error_msg)
+                if "host seems down" in (res.stdout or "").lower():
+                    reason = "host_down"
+                else:
+                    reason = "execution_error"
+            else:
+                mode = "real"
+                finding_count = 1
+        except subprocess.TimeoutExpired:
+            mode = "failed"
+            exit_code = 124
+            reason = "timeout"
+            error_msg = "Nmap scan timed out after 180 seconds."
+            errors.append(error_msg)
         except Exception as e:
+            mode = "failed"
             exit_code = 1
+            reason = "execution_error"
             error_msg = str(e)
-            raw_xml_path.write_text(generate_mock_nmap_xml(target_host, port), encoding="utf-8")
-            normal_txt_path.write_text(generate_mock_nmap_normal(target_host, port), encoding="utf-8")
+            errors.append(error_msg)
+    elif force_sim:
+        simulated_dir.mkdir(parents=True, exist_ok=True)
+        raw_xml_path = simulated_dir / "nmap_raw.xml"
+        normal_txt_path = simulated_dir / "nmap_normal.txt"
+        rel_raw_path = "simulated/nmap_raw.xml"
+
+        raw_xml_path.write_text(
+            generate_mock_nmap_xml(target_host, port), encoding="utf-8"
+        )
+        normal_txt_path.write_text(
+            generate_mock_nmap_normal(target_host, port), encoding="utf-8"
+        )
+        mode = "simulated"
+        reason = "binary_not_found" if not nmap_binary else None
+        exit_code = 0
+        finding_count = 1
+        warnings.append("Simulated scan results. Not genuine evidence.")
+        nmap_args = f"-sV -Pn -T4 {port_arg}{script_arg} {target_host} [SIMULATED]"
+        command_str = f"nmap {nmap_args}"
     else:
-        raw_xml_path.write_text(generate_mock_nmap_xml(target_host, port), encoding="utf-8")
-        normal_txt_path.write_text(generate_mock_nmap_normal(target_host, port), encoding="utf-8")
+        # Binary not found and not simulating -> FAIL HONESTLY
+        mode = "failed"
+        reason = "binary_not_found"
+        exit_code = 127
+        error_msg = "Nmap binary is not installed in the environment."
+        errors.append(error_msg)
+        raw_xml_path = None
+        normal_txt_path = None
+        rel_raw_path = None
+        nmap_args = (
+            f"-sV -Pn -T4 {port_arg}{script_arg} {target_host} [BINARY NOT FOUND]"
+        )
+        command_str = f"nmap {nmap_args}"
 
     duration = time.time() - start_time
+    finished_at = datetime.now(timezone.utc).isoformat()
+
+    status = create_scan_status(
+        tool="nmap",
+        target_id=target_id,
+        target_url=f"http://{target_host}:{port}" if port else f"http://{target_host}",
+        started_at=started_at,
+        finished_at=finished_at,
+        duration_sec=duration,
+        mode=mode,
+        exit_code=exit_code,
+        binary_available=bool(nmap_binary),
+        reason=reason,
+        raw_file_path=raw_xml_path,
+        finding_count=finding_count,
+        warnings=warnings,
+        errors=errors,
+        relative_raw_path=rel_raw_path,
+    )
+    save_scan_status(scan_dir, status)
 
     append_command_log(
         log_path=commands_log,
@@ -202,7 +288,7 @@ def run_nmap_scan(
         arguments=nmap_args,
         exit_code=exit_code,
         duration=duration,
-        output_path=str(raw_xml_path),
+        output_path=str(raw_xml_path) if raw_xml_path else "None",
         error=error_msg,
     )
 
@@ -211,9 +297,10 @@ def run_nmap_scan(
         "arguments": nmap_args,
         "exit_code": exit_code,
         "duration": duration,
-        "raw_xml_path": str(raw_xml_path),
-        "normal_txt_path": str(normal_txt_path),
+        "raw_xml_path": str(raw_xml_path) if raw_xml_path else "",
+        "normal_txt_path": str(normal_txt_path) if normal_txt_path else "",
         "commands_log": str(commands_log),
+        "status": status.model_dump(),
     }
 
 
@@ -231,7 +318,9 @@ def main():
         port=args.port,
         simulate=args.simulate,
     )
-    print(f"Scan completed with exit code {res['exit_code']} in {res['duration']:.2f}s")
+    print(
+        f"Scan completed with exit code {res['exit_code']} in {res['duration']:.2f}s (mode: {res['status']['mode']})"
+    )
     print(f"Raw Evidence XML: {res['raw_xml_path']}")
     print(f"Commands Log: {res['commands_log']}")
 

@@ -3,20 +3,11 @@
   "title": "HttpxResult",
   "description": "Schema for structured Httpx HTTP probe results",
   "type": "object",
-  "required": [
-    "scan_metadata",
-    "results"
-  ],
+  "required": ["scan_metadata", "results"],
   "properties": {
     "scan_metadata": {
       "type": "object",
-      "required": [
-        "tool",
-        "target",
-        "command",
-        "timestamp",
-        "exit_code"
-      ],
+      "required": ["tool", "target", "command", "timestamp", "exit_code"],
       "properties": {
         "tool": {
           "type": "string"
@@ -45,10 +36,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "url",
-          "status_code"
-        ],
+        "required": ["url", "status_code"],
         "properties": {
           "url": {
             "type": "string"

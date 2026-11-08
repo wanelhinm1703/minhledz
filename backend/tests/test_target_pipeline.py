@@ -1,12 +1,12 @@
 import pathlib
-import pytest
+
 from backend.app.schemas.target import TargetType
-from backend.app.services.target_parser import TargetParser
-from backend.app.services.target_normalizer import TargetNormalizer
-from backend.app.services.target_validator import TargetValidator
-from backend.app.services.scope_validator import ScopeValidator, ScopeViolation
 from backend.app.services.recon_planner import ReconPlanner
+from backend.app.services.scope_validator import ScopeValidator
+from backend.app.services.target_normalizer import TargetNormalizer
+from backend.app.services.target_parser import TargetParser
 from backend.app.services.target_registry import TargetRegistry
+from backend.app.services.target_validator import TargetValidator
 from toolkit.scripts.parse_nmap import NmapParser
 from toolkit.scripts.run_nmap import run_nmap_scan
 
@@ -108,7 +108,12 @@ def test_nmap_scan_and_parse(tmp_path):
     assert pathlib.Path(res["normal_txt_path"]).exists()
     assert pathlib.Path(res["commands_log"]).exists()
 
-    schema_file = pathlib.Path(__file__).resolve().parent.parent.parent / "security" / "schemas" / "nmap_result.schema.json"
+    schema_file = (
+        pathlib.Path(__file__).resolve().parent.parent.parent
+        / "security"
+        / "schemas"
+        / "nmap_result.schema.json"
+    )
     parsed = NmapParser.parse_xml_file(
         xml_path=pathlib.Path(res["raw_xml_path"]),
         scan_metadata=res,

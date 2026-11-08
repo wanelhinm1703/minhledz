@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import ipaddress
 import re
-from typing import Optional
 from urllib.parse import urlparse
+
 from pydantic import BaseModel
 
 from backend.app.schemas.target import TargetType
@@ -13,9 +13,9 @@ class ParsedTarget(BaseModel):
     raw_input: str
     target_type: TargetType
     host: str
-    port: Optional[int] = None
-    scheme: Optional[str] = None
-    path: Optional[str] = None
+    port: int | None = None
+    scheme: str | None = None
+    path: str | None = None
 
 
 class TargetParser:

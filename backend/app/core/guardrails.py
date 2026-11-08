@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Any, Tuple
 
 
 class Guardrails:
@@ -26,14 +25,34 @@ class Guardrails:
     ]
 
     @classmethod
-    def check_exploitation_intent(cls, user_message: str) -> Tuple[bool, str]:
+    def check_exploitation_intent(cls, user_message: str) -> tuple[bool, str]:
         text = user_message.lower()
         for pat in cls.EXPLOIT_PATTERNS:
             if re.search(pat, text):
-                if any(w in text for w in ["how to verify", "safe", "read-only", "what is", "analyze", "explain"]):
+                if any(
+                    w in text
+                    for w in [
+                        "how to verify",
+                        "safe",
+                        "read-only",
+                        "what is",
+                        "analyze",
+                        "explain",
+                    ]
+                ):
                     continue
                 # Explicit request to exploit
-                if any(w in text for w in ["exploit this", "exploit target", "tấn công", "hack target", "chiếm quyền", "chạy exploit"]):
+                if any(
+                    w in text
+                    for w in [
+                        "exploit this",
+                        "exploit target",
+                        "tấn công",
+                        "hack target",
+                        "chiếm quyền",
+                        "chạy exploit",
+                    ]
+                ):
                     return True, (
                         "Tôi không thực hiện automated exploitation.\n\n"
                         "Tuy nhiên, tôi có thể hỗ trợ bạn:\n"
@@ -46,7 +65,9 @@ class Guardrails:
         return False, ""
 
     @classmethod
-    def classify_statements(cls, response_text: str, has_evidence: bool) -> Dict[str, list]:
+    def classify_statements(
+        cls, response_text: str, has_evidence: bool
+    ) -> dict[str, list]:
         facts = []
         inferences = []
         hypotheses = []
@@ -56,17 +77,34 @@ class Guardrails:
             line_str = line.strip().lstrip("-*#").strip()
             if not line_str:
                 continue
-            if any(k in line_str.lower() for k in ["phát hiện", "nmap", "httpx", "cổng", "port", "phiên bản"]):
+            if any(
+                k in line_str.lower()
+                for k in ["phát hiện", "nmap", "httpx", "cổng", "port", "phiên bản"]
+            ):
                 facts.append(line_str)
-            elif any(k in line_str.lower() for k in ["liên quan", "cve", "cwe", "cvss", "lỗ hổng"]):
+            elif any(
+                k in line_str.lower()
+                for k in ["liên quan", "cve", "cwe", "cvss", "lỗ hổng"]
+            ):
                 inferences.append(line_str)
-            elif any(k in line_str.lower() for k in ["có thể", "cần xác minh", "khả năng", "giả thuyết", "verification"]):
+            elif any(
+                k in line_str.lower()
+                for k in [
+                    "có thể",
+                    "cần xác minh",
+                    "khả năng",
+                    "giả thuyết",
+                    "verification",
+                ]
+            ):
                 hypotheses.append(line_str)
 
         if not facts and has_evidence:
             facts.append("Evidence thu thập từ kết quả trinh sát hợp lệ.")
         if not hypotheses:
-            hypotheses.append("Cần thực hiện kiểm chứng an toàn (read-only) trước khi kết luận.")
+            hypotheses.append(
+                "Cần thực hiện kiểm chứng an toàn (read-only) trước khi kết luận."
+            )
 
         return {
             "facts": facts[:3],
@@ -75,22 +113,51 @@ class Guardrails:
         }
 
 
-def check_exploit_intent(message: str) -> Tuple[bool, str]:
+def check_exploit_intent(message: str) -> tuple[bool, str]:
     text = message.lower()
-    if any(k in text for k in ["ignore all previous instructions", "system prompt override", "jailbreak"]):
+    if any(
+        k in text
+        for k in [
+            "ignore all previous instructions",
+            "system prompt override",
+            "jailbreak",
+        ]
+    ):
         return True, "PROMPT_INJECTION"
 
-    if any(k in text for k in ["--os-shell", "meterpreter", "reverse shell", "drop shell"]):
+    if any(
+        k in text
+        for k in [
+            "--os-shell",
+            "meterpreter",
+            "reverse shell",
+            "drop shell",
+            "/dev/tcp",
+            "mkfifo",
+            "rm -rf",
+            "drop table",
+            "nc -e",
+        ]
+    ):
         return True, "MALICIOUS_TOOL_REQUEST"
 
     is_blocked, _ = Guardrails.check_exploitation_intent(message)
     if is_blocked:
         return True, "EXPLOIT_KEYWORD"
 
-    if any(w in text for w in [
-        "exploit target", "exploit này", "tấn công", "chạy exploit", 
-        "rce vào server", "tấn công rce", "chiếm quyền", "exploit tự động"
-    ]):
+    if any(
+        w in text
+        for w in [
+            "exploit target",
+            "exploit này",
+            "tấn công",
+            "chạy exploit",
+            "rce vào server",
+            "tấn công rce",
+            "chiếm quyền",
+            "exploit tự động",
+        ]
+    ):
         return True, "EXPLOIT_KEYWORD"
 
     return False, ""
@@ -105,4 +172,3 @@ def format_guardrail_refusal(reason: str = "EXPLOIT_KEYWORD") -> str:
         "3. **Tạo Validation Plan** với các lệnh kiểm tra reviewable (curl banner check, passive probe)\n"
         "4. **Khuyến nghị khắc phục (Remediation guidance)** theo chuẩn NIST / CIS."
     )
-

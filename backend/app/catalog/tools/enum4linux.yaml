@@ -1,0 +1,36 @@
+tool_id: enum4linux
+name: enum4linux
+category: service_enum
+binary: enum4linux
+version_command:
+- -h
+docker:
+  image: ai-pentest-tools:latest
+  binary: enum4linux
+target_types:
+- ipv4
+- domain
+- hostname
+capabilities:
+- smb_enumeration
+- user_enumeration
+- share_enumeration
+input_types:
+- ip
+- hostname
+output_formats:
+- raw
+- json
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_service_enum.py
+evidence_directory: toolkit/06-service-enum/scans
+enabled: true
+tags:
+- service-enum
+- smb
+- windows
+- shares
+safe_flags:
+- -a
+binary_lookup_paths: []

@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
 import pathlib
-import sys
+from datetime import datetime, timezone
+
 import jsonschema
 
 
@@ -18,7 +18,9 @@ class SearchsploitParser:
         schema_path: pathlib.Path | None = None,
     ) -> dict:
         if not json_path.exists():
-            raise FileNotFoundError(f"Raw SearchSploit output not found at: {json_path}")
+            raise FileNotFoundError(
+                f"Raw SearchSploit output not found at: {json_path}"
+            )
 
         meta = scan_metadata or {}
         structured_meta = {
@@ -43,18 +45,24 @@ class SearchsploitParser:
                     cve_list = []
                     codes = exp.get("Codes", "")
                     if codes:
-                        cve_list = [c.strip() for c in codes.split(";") if c.strip().upper().startswith("CVE-")]
+                        cve_list = [
+                            c.strip()
+                            for c in codes.split(";")
+                            if c.strip().upper().startswith("CVE-")
+                        ]
 
-                    results.append({
-                        "title": exp.get("Title", ""),
-                        "edb_id": str(exp.get("EDB-ID", "")),
-                        "date": exp.get("Date", ""),
-                        "author": exp.get("Author", ""),
-                        "type": exp.get("Type", "remote"),
-                        "platform": exp.get("Platform", "unknown"),
-                        "path": exp.get("Path", ""),
-                        "cve_ids": cve_list,
-                    })
+                    results.append(
+                        {
+                            "title": exp.get("Title", ""),
+                            "edb_id": str(exp.get("EDB-ID", "")),
+                            "date": exp.get("Date", ""),
+                            "author": exp.get("Author", ""),
+                            "type": exp.get("Type", "remote"),
+                            "platform": exp.get("Platform", "unknown"),
+                            "path": exp.get("Path", ""),
+                            "cve_ids": cve_list,
+                        }
+                    )
         except Exception:
             pass
 
@@ -72,9 +80,15 @@ class SearchsploitParser:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Parse SearchSploit JSON to Structured JSON")
-    parser.add_argument("--json", required=True, help="Path to raw searchsploit_raw.json")
-    parser.add_argument("--output", required=True, help="Path to output structured json")
+    parser = argparse.ArgumentParser(
+        description="Parse SearchSploit JSON to Structured JSON"
+    )
+    parser.add_argument(
+        "--json", required=True, help="Path to raw searchsploit_raw.json"
+    )
+    parser.add_argument(
+        "--output", required=True, help="Path to output structured json"
+    )
     parser.add_argument("--schema", help="Path to searchsploit_result.schema.json")
     args = parser.parse_args()
 

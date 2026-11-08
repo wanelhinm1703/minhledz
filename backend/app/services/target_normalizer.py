@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ipaddress
+
 from backend.app.schemas.target import TargetType
 from backend.app.services.target_parser import ParsedTarget
 

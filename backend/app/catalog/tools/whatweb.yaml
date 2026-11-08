@@ -1,0 +1,36 @@
+tool_id: whatweb
+name: WhatWeb
+category: web
+binary: whatweb
+version_command:
+- --version
+docker:
+  image: ai-pentest-tools:latest
+  binary: whatweb
+target_types:
+- url
+- host_port
+- domain
+capabilities:
+- technology_fingerprinting
+- plugin_detection
+- web_server_version
+input_types:
+- url
+output_formats:
+- json
+- raw
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_whatweb.py
+evidence_directory: toolkit/04-web/scans
+enabled: true
+tags:
+- web
+- fingerprint
+- cms
+- technology
+safe_flags:
+- -a
+- '1'
+binary_lookup_paths: []

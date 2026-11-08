@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "AI-Pentest Copilot",
+          "semanticVersion": "5.0.0",
+          "informationUri": "https://github.com/ai-pentest-copilot",
+          "rules": []
+        }
+      },
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "endTimeUtc": "2026-09-19T23:30:26Z"
+        }
+      ],
+      "results": []
+    }
+  ]
+}

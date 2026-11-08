@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
-import os
 import pathlib
 import sys
+from datetime import datetime, timezone
 
 # Ensure repository root is in sys.path
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
@@ -71,7 +70,7 @@ def execute_dynamic_scan(raw_target: str, campaign_id: str = "lab-local") -> dic
         target.scope.is_in_scope = False
         target.scope.scope_rule = decision.reason
         registry._save()
-        print(f"\n[!] SECURITY ALERT: TARGET BLOCKED BY SCOPE POLICY!")
+        print("\n[!] SECURITY ALERT: TARGET BLOCKED BY SCOPE POLICY!")
         print(f"    Reason: {decision.reason}\n")
         raise ScopeViolation(decision.reason)
 
@@ -90,7 +89,9 @@ def execute_dynamic_scan(raw_target: str, campaign_id: str = "lab-local") -> dic
 
     # 7. Execute Recon (Nmap)
     print("==> [6/7] Executing Non-Destructive Reconnaissance...")
-    scan_output_dir = root / "toolkit" / "03-network" / "scans" / target.target_id / "nmap"
+    scan_output_dir = (
+        root / "toolkit" / "03-network" / "scans" / target.target_id / "nmap"
+    )
     raw_res = run_nmap_scan(
         target_id=target.target_id,
         target_host=target.host,
@@ -120,7 +121,9 @@ def execute_dynamic_scan(raw_target: str, campaign_id: str = "lab-local") -> dic
         schema_path=schema_path,
     )
     structured_json_path.write_text(json.dumps(structured, indent=2), encoding="utf-8")
-    print("    [OK] Structured JSON generated and validated against nmap_result.schema.json!")
+    print(
+        "    [OK] Structured JSON generated and validated against nmap_result.schema.json!"
+    )
 
     print("\n-------------------------------------------------------")
     print("[*] RECON COMPLETED SUCCESSFULLY!")
@@ -144,7 +147,9 @@ def main():
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     scan_parser = subparsers.add_parser("scan", help="Scan dynamic target")
-    scan_parser.add_argument("--target", required=True, help="Target input (IP, URL, CIDR, Domain, etc.)")
+    scan_parser.add_argument(
+        "--target", required=True, help="Target input (IP, URL, CIDR, Domain, etc.)"
+    )
     scan_parser.add_argument("--campaign", default="lab-local", help="Campaign ID")
 
     list_parser = subparsers.add_parser("list", help="List registered targets")
@@ -165,7 +170,9 @@ def main():
         targets = registry.list_all()
         print(f"Found {len(targets)} registered target(s):")
         for t in targets:
-            print(f" - [{t.status.value}] {t.target_id} | {t.type.value} | {t.normalized_value}")
+            print(
+                f" - [{t.status.value}] {t.target_id} | {t.type.value} | {t.normalized_value}"
+            )
 
 
 if __name__ == "__main__":

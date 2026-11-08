@@ -1,0 +1,42 @@
+tool_id: httpx
+name: HTTPx
+category: web
+binary: httpx
+version_command:
+- -version
+docker:
+  image: ai-pentest-tools:latest
+  binary: httpx
+target_types:
+- url
+- host_port
+- domain
+- hostname
+capabilities:
+- web_probing
+- status_code
+- title
+- tech_detection
+input_types:
+- url
+- host
+output_formats:
+- jsonl
+- raw
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_httpx.py
+evidence_directory: toolkit/04-web/scans
+enabled: true
+tags:
+- web
+- probe
+- http
+- tech-detection
+- projectdiscovery
+safe_flags:
+- -silent
+- -status-code
+- -title
+- -tech-detect
+binary_lookup_paths: []

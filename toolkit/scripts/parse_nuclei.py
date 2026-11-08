@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
 import pathlib
-import sys
+from datetime import datetime, timezone
+
 import jsonschema
 
 
@@ -18,7 +18,9 @@ class NucleiParser:
         schema_path: pathlib.Path | None = None,
     ) -> dict:
         if not jsonl_path.exists():
-            raise FileNotFoundError(f"Raw Nuclei output file not found at: {jsonl_path}")
+            raise FileNotFoundError(
+                f"Raw Nuclei output file not found at: {jsonl_path}"
+            )
 
         meta = scan_metadata or {}
         structured_meta = {
@@ -40,24 +42,36 @@ class NucleiParser:
                 try:
                     record = json.loads(line)
                     info = record.get("info", {})
-                    findings.append({
-                        "template_id": record.get("template_id", record.get("template-id", "unknown")),
-                        "info": {
-                            "name": info.get("name", "Unknown Finding"),
-                            "severity": info.get("severity", "info"),
-                            "description": info.get("description", ""),
-                            "tags": info.get("tags", []),
-                            "reference": info.get("reference", []),
-                            "cve_id": info.get("cve_id", info.get("cve-id", [])),
-                            "cwe_id": info.get("cwe_id", info.get("cwe-id", [])),
-                            "cvss_score": float(info.get("cvss_score", info.get("cvss-score", 0.0))),
-                        },
-                        "type": record.get("type", "http"),
-                        "host": record.get("host", ""),
-                        "matched_at": record.get("matched_at", record.get("matched-at", "")),
-                        "extracted_results": record.get("extracted_results", record.get("extracted-results", [])),
-                        "curl_command": record.get("curl_command", record.get("curl-command", "")),
-                    })
+                    findings.append(
+                        {
+                            "template_id": record.get(
+                                "template_id", record.get("template-id", "unknown")
+                            ),
+                            "info": {
+                                "name": info.get("name", "Unknown Finding"),
+                                "severity": info.get("severity", "info"),
+                                "description": info.get("description", ""),
+                                "tags": info.get("tags", []),
+                                "reference": info.get("reference", []),
+                                "cve_id": info.get("cve_id", info.get("cve-id", [])),
+                                "cwe_id": info.get("cwe_id", info.get("cwe-id", [])),
+                                "cvss_score": float(
+                                    info.get("cvss_score", info.get("cvss-score", 0.0))
+                                ),
+                            },
+                            "type": record.get("type", "http"),
+                            "host": record.get("host", ""),
+                            "matched_at": record.get(
+                                "matched_at", record.get("matched-at", "")
+                            ),
+                            "extracted_results": record.get(
+                                "extracted_results", record.get("extracted-results", [])
+                            ),
+                            "curl_command": record.get(
+                                "curl_command", record.get("curl-command", "")
+                            ),
+                        }
+                    )
                 except Exception:
                     pass
 
@@ -74,9 +88,13 @@ class NucleiParser:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Parse Nuclei JSONL to Structured JSON")
+    parser = argparse.ArgumentParser(
+        description="Parse Nuclei JSONL to Structured JSON"
+    )
     parser.add_argument("--jsonl", required=True, help="Path to raw nuclei_raw.jsonl")
-    parser.add_argument("--output", required=True, help="Path to output structured json")
+    parser.add_argument(
+        "--output", required=True, help="Path to output structured json"
+    )
     parser.add_argument("--schema", help="Path to nuclei_finding.schema.json")
     args = parser.parse_args()
 

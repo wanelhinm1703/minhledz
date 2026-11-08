@@ -1,0 +1,21 @@
+{
+  "tool": "masscan",
+  "target_id": "target-192.168.242.129",
+  "target_url": "http://192.168.242.129",
+  "started_at": "2026-09-19T22:53:27.424507+00:00",
+  "finished_at": "2026-09-19T22:53:27.427109+00:00",
+  "duration_sec": 0.0,
+  "mode": "failed",
+  "reason": "execution_error",
+  "exit_code": 1,
+  "binary_available": true,
+  "evidence_trustworthy": false,
+  "raw_path": "raw/masscan_raw.json",
+  "raw_sha256": null,
+  "raw_size_bytes": 0,
+  "finding_count": 0,
+  "warnings": [],
+  "errors": [
+    "[-] FAIL: permission denied\n    [hint] need to sudo or run as root or something\n[-] if:wlp2s0:init: failed\n"
+  ]
+}

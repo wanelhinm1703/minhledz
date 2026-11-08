@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import json
-import os
 import pathlib
 import shutil
-from typing import List, Dict, Any
+
 from fastapi import APIRouter, HTTPException, Query
 
 from backend.app.services.tool_registry import tool_registry
@@ -27,6 +26,16 @@ ALL_SCAN_DIRS = [
 ]
 
 
+EXCLUDED_SCAN_TARGETS = {
+    "target-vuln",
+    "intel_cache",
+    "temp",
+    "scratch",
+    "general",
+    ".git",
+}
+
+
 @router.get("/tools")
 def get_tools_availability():
     """Return live availability and version status for all tools in the pentest toolset."""
@@ -42,12 +51,13 @@ def list_scans():
     for _, base in ALL_SCAN_DIRS:
         if base.exists():
             for t_dir in base.iterdir():
-                if t_dir.is_dir():
+                if t_dir.is_dir() and t_dir.name not in EXCLUDED_SCAN_TARGETS:
                     targets_seen.add(t_dir.name)
 
     for tid in sorted(targets_seen):
         tools = []
         files = []
+        tool_statuses = {}
 
         for category_name, base_dir in ALL_SCAN_DIRS:
             target_tool_root = base_dir / tid
@@ -61,67 +71,116 @@ def list_scans():
                 tool_name = tool_dir.name
                 tools.append(tool_name)
 
+                # 0. Scan Status (status.json)
+                status_file = tool_dir / "status.json"
+                if status_file.exists():
+                    rel_p = f"{category_name}/scans/{tid}/{tool_name}/status.json"
+                    files.append(
+                        {
+                            "name": "status.json",
+                            "tool": tool_name,
+                            "type": "status",
+                            "rel_path": rel_p,
+                        }
+                    )
+                    try:
+                        tool_statuses[tool_name] = json.loads(
+                            status_file.read_text(encoding="utf-8", errors="replace")
+                        )
+                    except Exception:
+                        pass
+
                 # 1. Structured files
                 struct_dir = tool_dir / "structured"
                 if struct_dir.exists():
                     for f in struct_dir.iterdir():
                         if f.is_file() and f.suffix.lower() == ".json":
                             rel_p = f"{category_name}/scans/{tid}/{tool_name}/structured/{f.name}"
-                            files.append({
-                                "name": f.name,
-                                "tool": tool_name,
-                                "type": "structured",
-                                "rel_path": rel_p,
-                            })
+                            files.append(
+                                {
+                                    "name": f.name,
+                                    "tool": tool_name,
+                                    "type": "structured",
+                                    "rel_path": rel_p,
+                                }
+                            )
 
                 # 2. Raw files
                 raw_dir = tool_dir / "raw"
                 if raw_dir.exists():
                     for f in raw_dir.iterdir():
                         if f.is_file():
-                            rel_p = f"{category_name}/scans/{tid}/{tool_name}/raw/{f.name}"
-                            files.append({
-                                "name": f.name,
-                                "tool": tool_name,
-                                "type": "raw",
-                                "rel_path": rel_p,
-                            })
+                            rel_p = (
+                                f"{category_name}/scans/{tid}/{tool_name}/raw/{f.name}"
+                            )
+                            files.append(
+                                {
+                                    "name": f.name,
+                                    "tool": tool_name,
+                                    "type": "raw",
+                                    "rel_path": rel_p,
+                                }
+                            )
 
-                # 3. Normal / stdout files
+                # 3. Simulated files
+                sim_dir = tool_dir / "simulated"
+                if sim_dir.exists():
+                    for f in sim_dir.iterdir():
+                        if f.is_file():
+                            rel_p = f"{category_name}/scans/{tid}/{tool_name}/simulated/{f.name}"
+                            files.append(
+                                {
+                                    "name": f.name,
+                                    "tool": tool_name,
+                                    "type": "simulated",
+                                    "rel_path": rel_p,
+                                }
+                            )
+
+                # 4. Normal / stdout files
                 norm_dir = tool_dir / "normal"
                 if norm_dir.exists():
                     for f in norm_dir.iterdir():
                         if f.is_file():
                             rel_p = f"{category_name}/scans/{tid}/{tool_name}/normal/{f.name}"
-                            files.append({
-                                "name": f.name,
-                                "tool": tool_name,
-                                "type": "normal",
-                                "rel_path": rel_p,
-                            })
+                            files.append(
+                                {
+                                    "name": f.name,
+                                    "tool": tool_name,
+                                    "type": "normal",
+                                    "rel_path": rel_p,
+                                }
+                            )
 
-                # 4. Command audit log
+                # 5. Command audit log
                 cmd_file = tool_dir / "commands.md"
                 if cmd_file.exists():
                     rel_p = f"{category_name}/scans/{tid}/{tool_name}/commands.md"
-                    files.append({
-                        "name": "commands.md",
-                        "tool": tool_name,
-                        "type": "log",
-                        "rel_path": rel_p,
-                    })
+                    files.append(
+                        {
+                            "name": "commands.md",
+                            "tool": tool_name,
+                            "type": "log",
+                            "rel_path": rel_p,
+                        }
+                    )
 
-        results.append({
-            "target_id": tid,
-            "tools": sorted(list(set(tools))),
-            "evidence_files": files,
-        })
+        results.append(
+            {
+                "target_id": tid,
+                "tools": sorted(list(set(tools))),
+                "evidence_files": files,
+                "tool_statuses": tool_statuses,
+            }
+        )
 
     return results
 
 
 @router.get("/file")
-def get_evidence_file(path: str = Query(..., description="Relative path within toolkit")):
+def get_evidence_file(
+    path: str = Query(..., description="Relative path within toolkit"),
+):
     clean_path = path.lstrip("/\\")
     full_path = root_dir / "toolkit" / clean_path
 
@@ -163,12 +222,16 @@ def delete_target_scans(target_id: str):
                 deleted_count += 1
 
         # Check analysis artifacts
-        manifest_file = root_dir / "toolkit" / "09-analysis" / "manifests" / f"{key}_manifest.json"
+        manifest_file = (
+            root_dir / "toolkit" / "09-analysis" / "manifests" / f"{key}_manifest.json"
+        )
         if manifest_file.exists():
             manifest_file.unlink(missing_ok=True)
             deleted_count += 1
 
-        findings_file = root_dir / "toolkit" / "09-analysis" / "findings" / f"{key}_findings.json"
+        findings_file = (
+            root_dir / "toolkit" / "09-analysis" / "findings" / f"{key}_findings.json"
+        )
         if findings_file.exists():
             findings_file.unlink(missing_ok=True)
             deleted_count += 1

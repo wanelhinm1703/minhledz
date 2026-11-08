@@ -1,0 +1,19 @@
+{
+  "tool": "naabu",
+  "target_id": "target-192.168.242.129",
+  "target_url": "http://192.168.242.129",
+  "started_at": "2026-09-19T22:53:23.574437+00:00",
+  "finished_at": "2026-09-19T22:53:27.423891+00:00",
+  "duration_sec": 3.85,
+  "mode": "real",
+  "reason": null,
+  "exit_code": 0,
+  "binary_available": true,
+  "evidence_trustworthy": true,
+  "raw_path": "raw/naabu_raw.txt",
+  "raw_sha256": "a2c0c7e3c38767b82a3b995194791899cf7c385f0dc1eaa663ba70e0a1c9fc3a",
+  "raw_size_bytes": 361,
+  "finding_count": 18,
+  "warnings": [],
+  "errors": []
+}

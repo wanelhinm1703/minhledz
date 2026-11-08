@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
@@ -33,6 +34,12 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 
+    # Vulnerability Threat Intel Settings (Dual-mode: online + offline)
+    VULN_INTEL_MODE: str = os.getenv("VULN_INTEL_MODE", "dual")  # 'dual', 'offline', 'online'
+    ONLINE_INTEL_TIMEOUT: float = float(os.getenv("ONLINE_INTEL_TIMEOUT", "4.0"))
+    OSV_API_URL: str = os.getenv("OSV_API_URL", "https://api.osv.dev/v1/query")
+    NVD_API_KEY: str = os.getenv("NVD_API_KEY", "")
+
     def get_kb_db_path(self) -> pathlib.Path:
         p = pathlib.Path(self.KB_SQLITE_PATH)
         if not p.is_absolute():
@@ -42,4 +49,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

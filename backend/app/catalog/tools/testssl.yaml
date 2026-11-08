@@ -1,0 +1,40 @@
+tool_id: testssl
+name: TestSSL.sh
+category: network
+binary: testssl.sh
+version_command:
+- --version
+docker:
+  image: drwetter/testssl.sh:latest
+  binary: testssl.sh
+target_types:
+- domain
+- hostname
+- ipv4
+- url
+capabilities:
+- ssl_tls_audit
+- ciphersuite_check
+- certificate_inspection
+input_types:
+- host_port
+- url
+output_formats:
+- json
+- raw
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_testssl.py
+evidence_directory: toolkit/03-network/scans
+enabled: true
+tags:
+- network
+- ssl
+- tls
+- crypto
+- audit
+- compliance
+safe_flags:
+- --quiet
+- --fast
+binary_lookup_paths: []

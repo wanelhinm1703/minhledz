@@ -1,0 +1,38 @@
+tool_id: katana
+name: Katana
+category: web
+binary: katana
+version_command:
+- -version
+docker:
+  image: ai-pentest-tools:latest
+  binary: katana
+target_types:
+- url
+- host_port
+capabilities:
+- web_crawling
+- endpoint_discovery
+- form_extraction
+input_types:
+- url
+output_formats:
+- jsonl
+- raw
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_katana.py
+evidence_directory: toolkit/04-web/scans
+enabled: true
+tags:
+- web
+- crawler
+- endpoints
+- spider
+- projectdiscovery
+safe_flags:
+- -depth
+- '2'
+- -rate-limit
+- '20'
+binary_lookup_paths: []

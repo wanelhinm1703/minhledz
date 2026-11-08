@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter
+
 from backend.app.config import settings
 from backend.app.storage.db import db
 

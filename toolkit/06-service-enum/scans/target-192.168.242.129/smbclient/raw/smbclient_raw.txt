@@ -1,0 +1,2 @@
+Protocol negotiation to server 192.168.242.129 (for a protocol between SMB2_02 and SMB3) failed: NT_STATUS_CONNECTION_DISCONNECTED
+

@@ -1,0 +1,88 @@
+{
+  "target_id": "test-report-mock-target",
+  "campaign_name": "Automated Lab Assessment",
+  "generated_at": "2026-09-19 23:30:42 UTC",
+  "summary": {
+    "total": 1,
+    "by_severity": {
+      "CRITICAL": 0,
+      "HIGH": 1,
+      "MEDIUM": 0,
+      "LOW": 0,
+      "INFO": 0
+    },
+    "by_status": {
+      "CANDIDATE": 1,
+      "UNVERIFIED": 0,
+      "VERIFIED": 0,
+      "FALSE_POSITIVE": 0,
+      "RESOLVED": 0
+    },
+    "trustworthy_count": 1,
+    "simulated_count": 0,
+    "has_insufficient_evidence": false
+  },
+  "compliance": {
+    "compliance_score": 75,
+    "status": "NON-COMPLIANT (CRITICAL/HIGH VIOLATIONS)",
+    "total_active_violations": 1,
+    "critical_high_count": 1,
+    "owasp_top_10_breakdown": {
+      "A01:2021": 1
+    },
+    "cwe_top_25_hits": [
+      {
+        "finding_id": "FIND-REPORT-TEST",
+        "cwe_id": "CWE-22",
+        "rank": 8,
+        "name": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')",
+        "severity": "HIGH"
+      }
+    ],
+    "nist_sp_800_115_sections": [
+      "NIST SP 800-115 \u00a74.4"
+    ],
+    "cis_controls_v8": [
+      "CIS Control 16.1"
+    ]
+  },
+  "findings": [
+    {
+      "target_id": "test-report-mock-target",
+      "title": "Apache 2.4.49 Path Traversal Test",
+      "cve_id": "CVE-2021-41773",
+      "cwe_id": "CWE-22",
+      "cvss_score": 7.5,
+      "cvss_severity": "HIGH",
+      "cvss_v4_score": 8.7,
+      "cvss_v4_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N",
+      "cvss_v4_severity": "HIGH",
+      "is_cisa_kev": true,
+      "epss_score": 0.975,
+      "epss_percentile": 0.998,
+      "status": "CANDIDATE",
+      "affected_asset": "test-report-mock-target:80",
+      "description": "Path traversal vulnerability test",
+      "remediation": "Upgrade to 2.4.51+",
+      "evidence_chain": [
+        {
+          "tool": "nmap",
+          "file_path": "03-network/scans/nmap.xml",
+          "matched_text": "Apache 2.4.49 on port 80",
+          "target": null,
+          "command": null,
+          "raw_result": null,
+          "parsed_result": null,
+          "timestamp": null,
+          "trustworthy": true,
+          "is_simulated": false
+        }
+      ],
+      "trustworthy": true,
+      "is_simulated": false,
+      "id": "FIND-REPORT-TEST",
+      "created_at": "2026-09-19T23:30:41.999178+00:00",
+      "updated_at": "2026-09-19T23:30:41.999178+00:00"
+    }
+  ]
+}

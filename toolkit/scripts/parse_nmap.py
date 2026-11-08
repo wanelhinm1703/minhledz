@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
 import pathlib
-import sys
 import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
+
 import jsonschema
 
 
@@ -42,8 +42,12 @@ class NmapParser:
         for host_node in root.findall("host"):
             status_node = host_node.find("status")
             status_obj = {
-                "state": status_node.attrib.get("state", "unknown") if status_node is not None else "unknown",
-                "reason": status_node.attrib.get("reason", "") if status_node is not None else "",
+                "state": status_node.attrib.get("state", "unknown")
+                if status_node is not None
+                else "unknown",
+                "reason": status_node.attrib.get("reason", "")
+                if status_node is not None
+                else "",
             }
 
             addresses = {}
@@ -68,8 +72,16 @@ class NmapParser:
                     protocol = port_node.attrib.get("protocol", "tcp")
 
                     state_node = port_node.find("state")
-                    state = state_node.attrib.get("state", "closed") if state_node is not None else "closed"
-                    reason = state_node.attrib.get("reason", "") if state_node is not None else ""
+                    state = (
+                        state_node.attrib.get("state", "closed")
+                        if state_node is not None
+                        else "closed"
+                    )
+                    reason = (
+                        state_node.attrib.get("reason", "")
+                        if state_node is not None
+                        else ""
+                    )
 
                     service_obj = {}
                     service_node = port_node.find("service")
@@ -85,26 +97,32 @@ class NmapParser:
 
                     scripts = []
                     for script_node in port_node.findall("script"):
-                        scripts.append({
-                            "id": script_node.attrib.get("id", ""),
-                            "output": script_node.attrib.get("output", ""),
-                        })
+                        scripts.append(
+                            {
+                                "id": script_node.attrib.get("id", ""),
+                                "output": script_node.attrib.get("output", ""),
+                            }
+                        )
 
-                    ports.append({
-                        "portid": portid,
-                        "protocol": protocol,
-                        "state": state,
-                        "reason": reason,
-                        "service": service_obj,
-                        "scripts": scripts,
-                    })
+                    ports.append(
+                        {
+                            "portid": portid,
+                            "protocol": protocol,
+                            "state": state,
+                            "reason": reason,
+                            "service": service_obj,
+                            "scripts": scripts,
+                        }
+                    )
 
-            hosts.append({
-                "status": status_obj,
-                "addresses": addresses,
-                "hostnames": hostnames,
-                "ports": ports,
-            })
+            hosts.append(
+                {
+                    "status": status_obj,
+                    "addresses": addresses,
+                    "hostnames": hostnames,
+                    "ports": ports,
+                }
+            )
 
         result = {
             "scan_metadata": structured_meta,
@@ -121,7 +139,9 @@ class NmapParser:
 def main():
     parser = argparse.ArgumentParser(description="Parse Nmap XML to Structured JSON")
     parser.add_argument("--xml", required=True, help="Path to raw nmap.xml")
-    parser.add_argument("--output", required=True, help="Path to structured output.json")
+    parser.add_argument(
+        "--output", required=True, help="Path to structured output.json"
+    )
     parser.add_argument("--schema", help="Path to nmap_result.schema.json")
     args = parser.parse_args()
 

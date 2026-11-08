@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
 import pathlib
-import sys
+from datetime import datetime, timezone
+
 import jsonschema
 
 
@@ -48,18 +48,22 @@ class WhatwebParser:
                     for p_name, p_data in plugins_dict.items():
                         ver_list = p_data.get("version", [])
                         ver = ver_list[0] if ver_list else ""
-                        technologies.append({
-                            "name": p_name,
-                            "version": str(ver) if ver else "",
-                            "categories": [],
-                        })
+                        technologies.append(
+                            {
+                                "name": p_name,
+                                "version": str(ver) if ver else "",
+                                "categories": [],
+                            }
+                        )
 
-                    targets.append({
-                        "target": target_str,
-                        "http_status": http_status,
-                        "plugins": plugins_dict,
-                        "technologies": technologies,
-                    })
+                    targets.append(
+                        {
+                            "target": target_str,
+                            "http_status": http_status,
+                            "plugins": plugins_dict,
+                            "technologies": technologies,
+                        }
+                    )
         except Exception:
             pass
 
@@ -76,9 +80,13 @@ class WhatwebParser:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Parse WhatWeb JSON to Structured JSON")
+    parser = argparse.ArgumentParser(
+        description="Parse WhatWeb JSON to Structured JSON"
+    )
     parser.add_argument("--json", required=True, help="Path to raw whatweb_raw.json")
-    parser.add_argument("--output", required=True, help="Path to output structured json")
+    parser.add_argument(
+        "--output", required=True, help="Path to output structured json"
+    )
     parser.add_argument("--schema", help="Path to whatweb_result.schema.json")
     args = parser.parse_args()
 

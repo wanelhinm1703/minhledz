@@ -1,0 +1,117 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "AI-Pentest Copilot",
+          "semanticVersion": "5.0.0",
+          "informationUri": "https://github.com/ai-pentest-copilot",
+          "rules": [
+            {
+              "id": "CVE-2021-41773",
+              "name": "Apache_httpd_2.4.49_Path_Traversal",
+              "shortDescription": {
+                "text": "Apache httpd 2.4.49 Path Traversal"
+              },
+              "fullDescription": {
+                "text": "Path traversal attack outside document root"
+              },
+              "helpUri": "https://nvd.nist.gov/vuln/detail/CVE-2021-41773",
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "pentest-finding",
+                  "cvss-high",
+                  "owasp-a01:2021",
+                  "cwe-top25-rank-8"
+                ],
+                "security-severity": "7.5",
+                "cwe": [
+                  "CWE-22"
+                ],
+                "owasp": "A01:2021",
+                "nist_sp_800_115": "NIST SP 800-115 \u00a74.4",
+                "cis_control": "CIS Control 16.1"
+              },
+              "help": {
+                "text": "Remediation:\nUpgrade to 2.4.51",
+                "markdown": "### Remediation Guidance\nUpgrade to 2.4.51"
+              }
+            }
+          ]
+        }
+      },
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "endTimeUtc": "2026-09-19T23:29:34Z"
+        }
+      ],
+      "results": [
+        {
+          "ruleId": "CVE-2021-41773",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Apache httpd 2.4.49 Path Traversal\n\nAffected Asset: 192.168.56.101:80\nCVSS Score: 7.5 (HIGH)\n\nPath traversal attack outside document root"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "target://192.168.56.101:80",
+                  "uriBaseId": "%SRCROOT%"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "name": "192.168.56.101:80",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "target_id": "test-sarif-target",
+            "cvssScore": 7.5,
+            "cvssSeverity": "HIGH",
+            "remediation": "Upgrade to 2.4.51",
+            "trustworthy": true,
+            "is_simulated": false,
+            "compliance": {
+              "cwe_id": "CWE-22",
+              "cve_id": "CVE-2021-41773",
+              "owasp": {
+                "id": "A01:2021",
+                "name": "Broken Access Control",
+                "desc": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"
+              },
+              "cwe_top_25": {
+                "is_top_25": true,
+                "rank": 8,
+                "details": {
+                  "rank": 8,
+                  "score": 19.85,
+                  "name": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"
+                }
+              },
+              "nist_sp_800_115": {
+                "section": "NIST SP 800-115 \u00a74.4",
+                "title": "Web Application Vulnerability Scanning"
+              },
+              "cis_controls": {
+                "control": "CIS Control 16.1",
+                "title": "Establish and Maintain a Secure Application Development Process"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

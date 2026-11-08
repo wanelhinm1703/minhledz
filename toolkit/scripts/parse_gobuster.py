@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
 import pathlib
 import re
-import sys
+from datetime import datetime, timezone
+
 import jsonschema
 
 
@@ -37,13 +37,16 @@ class GobusterParser:
         try:
             content = raw_path.read_text(encoding="utf-8", errors="replace")
             # Pattern: /path (Status: 200) [Size: 1234] [--> /redirect]
-            line_pattern = re.compile(r"^(\S+)\s+\(Status:\s*(\d+)\)(?:\s+\[Size:\s*(\d+)\])?(?:\s+\[-->\s*(\S+)\])?", re.MULTILINE)
+            line_pattern = re.compile(
+                r"^(\S+)\s+\(Status:\s*(\d+)\)(?:\s+\[Size:\s*(\d+)\])?(?:\s+\[-->\s*(\S+)\])?",
+                re.MULTILINE,
+            )
             for match in line_pattern.finditer(content):
                 path_val = match.group(1)
                 status_code = int(match.group(2))
                 size_val = int(match.group(3)) if match.group(3) else 0
                 redirect_to = match.group(4) if match.group(4) else ""
-                
+
                 entry = {
                     "path": path_val,
                     "status": status_code,
@@ -68,9 +71,13 @@ class GobusterParser:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Parse Gobuster text to Structured JSON")
+    parser = argparse.ArgumentParser(
+        description="Parse Gobuster text to Structured JSON"
+    )
     parser.add_argument("--input", required=True, help="Path to raw gobuster_raw.txt")
-    parser.add_argument("--output", required=True, help="Path to output structured json")
+    parser.add_argument(
+        "--output", required=True, help="Path to output structured json"
+    )
     parser.add_argument("--schema", help="Path to gobuster_result.schema.json")
     args = parser.parse_args()
 

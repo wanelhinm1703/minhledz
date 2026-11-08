@@ -1,0 +1,50 @@
+tool_id: nmap
+name: Nmap
+category: network
+binary: nmap
+version_command:
+- --version
+docker:
+  image: ai-pentest-tools:latest
+  binary: nmap
+target_types:
+- ipv4
+- ipv6
+- cidr
+- domain
+- hostname
+- host_port
+capabilities:
+- port_scan
+- service_detection
+- version_detection
+- nse
+input_types:
+- ip
+- cidr
+- hostname
+output_formats:
+- xml
+- normal
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_nmap.py
+evidence_directory: toolkit/03-network/scans
+enabled: true
+tags:
+- network
+- port-scan
+- service-fingerprint
+- core
+- nmap
+safe_flags:
+- -sV
+- -Pn
+- -T4
+- -F
+- --script=safe
+binary_lookup_paths:
+- C:\Program Files (x86)\Nmap\nmap.exe
+- C:\Program Files\Nmap\nmap.exe
+- C:\ProgramData\chocolatey\bin\nmap.exe
+- C:\tools\nmap\nmap.exe

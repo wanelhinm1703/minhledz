@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CWE Definition",
+  "description": "Standard schema for Common Weakness Enumeration (CWE) record",
+  "type": "object",
+  "required": [
+    "cwe_id",
+    "name",
+    "description",
+    "source_url",
+    "source_name",
+    "ingested_at"
+  ],
+  "properties": {
+    "cwe_id": {
+      "type": "string",
+      "pattern": "^CWE-[0-9]+$"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "extended_description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "likelihood": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "mitigations": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "parent_cwe": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "source_name": {
+      "type": "string",
+      "default": "MITRE CWE"
+    },
+    "ingested_at": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

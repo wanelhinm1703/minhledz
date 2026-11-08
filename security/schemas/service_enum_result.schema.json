@@ -3,21 +3,11 @@
   "title": "ServiceEnumResult",
   "description": "Schema for structured Service Enumeration (SMB, SNMP, LDAP, Database) results",
   "type": "object",
-  "required": [
-    "scan_metadata",
-    "service",
-    "findings"
-  ],
+  "required": ["scan_metadata", "service", "findings"],
   "properties": {
     "scan_metadata": {
       "type": "object",
-      "required": [
-        "tool",
-        "target",
-        "command",
-        "timestamp",
-        "exit_code"
-      ],
+      "required": ["tool", "target", "command", "timestamp", "exit_code"],
       "properties": {
         "tool": {
           "type": "string"
@@ -52,10 +42,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "category",
-          "description"
-        ],
+        "required": ["category", "description"],
         "properties": {
           "category": {
             "type": "string"
@@ -68,12 +55,7 @@
           },
           "severity": {
             "type": "string",
-            "enum": [
-              "info",
-              "low",
-              "medium",
-              "high"
-            ]
+            "enum": ["info", "low", "medium", "high"]
           }
         }
       }

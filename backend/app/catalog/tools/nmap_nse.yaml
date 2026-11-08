@@ -1,0 +1,39 @@
+tool_id: nmap-nse
+name: Nmap NSE
+category: vulnerability
+binary: nmap
+version_command:
+- --version
+docker:
+  image: ai-pentest-tools:latest
+  binary: nmap
+target_types:
+- ipv4
+- ipv6
+- domain
+- host_port
+capabilities:
+- safe_nse_scripts
+- vuln_check
+- service_audit
+input_types:
+- ip
+- hostname
+output_formats:
+- xml
+- normal
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_nmap.py
+evidence_directory: toolkit/03-network/scans
+enabled: true
+tags:
+- vulnerability
+- nse
+- nmap
+- safe-scripts
+safe_flags:
+- --script=vuln and safe
+binary_lookup_paths:
+- C:\Program Files (x86)\Nmap\nmap.exe
+- C:\Program Files\Nmap\nmap.exe

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Security Assessment Report - 192.168.242.129</title>
+  <style>
+    body { font-family: "Times New Roman", Times, serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; padding: 40px; margin: 0; }
+    .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 40px; border-radius: 12px; border: 1px solid #334155; }
+    h1 { color: #38bdf8; border-bottom: 2px solid #334155; padding-bottom: 12px; margin-top: 0; }
+    h2 { color: #7dd3fc; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-top: 32px; }
+    h3 { color: #f8fafc; margin-top: 24px; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+    .crit { background: #7f1d1d; color: #fca5a5; }
+    .high { background: #7c2d12; color: #fdba74; }
+    .med { background: #78350f; color: #fde047; }
+    .low { background: #1e3a8a; color: #93c5fd; }
+    .stat-box { display: flex; gap: 12px; margin: 20px 0; }
+    .stat-item { flex: 1; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #334155; }
+    pre { background: #090d16; padding: 12px; border-radius: 6px; overflow-x: auto; color: #a5f3fc; font-family: monospace; }
+    code { background: #090d16; padding: 2px 6px; border-radius: 4px; color: #38bdf8; font-family: monospace; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #334155; font-size: 12px; color: #64748b; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Security Assessment Report</h1>
+    <p><strong>Target:</strong> <code>192.168.242.129</code> | <strong>Campaign:</strong> Automated Lab Assessment | <strong>Generated:</strong> 2026-09-18 08:05:25 UTC</p>
+    
+    
+
+    <div class="stat-box">
+      <div class="stat-item crit"><span style="font-size:24px; font-weight:bold;">4</span><br>Critical</div>
+      <div class="stat-item high"><span style="font-size:24px; font-weight:bold;">5</span><br>High</div>
+      <div class="stat-item med"><span style="font-size:24px; font-weight:bold;">0</span><br>Medium</div>
+      <div class="stat-item low"><span style="font-size:24px; font-weight:bold;">0</span><br>Low</div>
+    </div>
+
+    <h2>Tool Execution Audit</h2>
+    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <thead>
+        <tr style="text-align:left; background:#0f172a;">
+          <th style="padding:6px 12px;">Tool</th>
+          <th style="padding:6px 12px;">Mode</th>
+          <th style="padding:6px 12px;">Trustworthy</th>
+          <th style="padding:6px 12px;">Status / Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>database</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#ef4444; font-weight:bold;">FAILED</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">NO</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">binary_not_found</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>enum4linux</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#ef4444; font-weight:bold;">FAILED</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">NO</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">execution_error</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>httpx</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#ef4444; font-weight:bold;">FAILED</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">NO</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">execution_error</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>masscan</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#ef4444; font-weight:bold;">FAILED</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">NO</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">execution_error</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>naabu</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#10b981; font-weight:bold;">REAL</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">YES</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">Completed</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>nmap</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#10b981; font-weight:bold;">REAL</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">YES</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">Completed</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>nuclei</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#ef4444; font-weight:bold;">FAILED</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">NO</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">execution_error</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>rustscan</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#10b981; font-weight:bold;">REAL</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">YES</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">Completed</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>searchsploit</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#10b981; font-weight:bold;">REAL</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">YES</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">Completed</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>smbclient</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#ef4444; font-weight:bold;">FAILED</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">NO</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">execution_error</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>whatweb</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#ef4444; font-weight:bold;">FAILED</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">NO</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">execution_error</td>
+            </tr>
+            
+      </tbody>
+    </table>
+
+    
+            <h2>Compliance Posture (OWASP Top 10 / CWE Top 25 / NIST / CIS)</h2>
+            <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:16px; margin:16px 0; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span style="font-size:14px; color:#94a3b8;">Regulatory Assessment Status:</span><br>
+                <strong style="font-size:18px; color:#ef4444;">NON-COMPLIANT (CRITICAL/HIGH VIOLATIONS)</strong>
+              </div>
+              <div style="text-align:right;">
+                <span style="font-size:14px; color:#94a3b8;">Compliance Score:</span><br>
+                <span style="font-size:24px; font-weight:bold; color:#ef4444;">0/100</span>
+              </div>
+            </div>
+            <table style="width:100%; border-collapse:collapse; font-size:12px; margin-bottom:20px;">
+              <thead>
+                <tr style="text-align:left; background:#0f172a;">
+                  <th style="padding:6px 12px;">OWASP Standard</th>
+                  <th style="padding:6px 12px;">CIS / NIST Control</th>
+                  <th style="padding:6px 12px;">Associated Finding</th>
+                  <th style="padding:6px 12px;">Risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                <tr>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><strong>OWASP A06:2021</strong><br><span style="color:#94a3b8; font-size:11px;">Vulnerable and Outdated Components</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;">CIS Control 4.1<br><span style="color:#94a3b8; font-size:11px;">NIST SP 800-115 §4.3</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>Apache httpd 2.2.8 — CVE-2022-...</code><br><span style="color:#cbd5e1; font-size:11px;">CWE-444</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><span class="badge crit">CRITICAL</span></td>
+                </tr>
+                
+                <tr>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><strong>OWASP A01:2021</strong><br><span style="color:#94a3b8; font-size:11px;">Broken Access Control</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;">CIS Control 16.1<br><span style="color:#94a3b8; font-size:11px;">NIST SP 800-115 §4.4</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>Apache httpd 2.2.8 — CVE-2021-...</code><br><span style="color:#cbd5e1; font-size:11px;">CWE-22 (CWE Top 25 #8)</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><span class="badge crit">CRITICAL</span></td>
+                </tr>
+                
+                <tr>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><strong>OWASP A06:2021</strong><br><span style="color:#94a3b8; font-size:11px;">Vulnerable and Outdated Components</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;">CIS Control 4.1<br><span style="color:#94a3b8; font-size:11px;">NIST SP 800-115 §4.3</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>OpenSSH 4.7p1 Debian 8ubuntu1 ...</code><br><span style="color:#cbd5e1; font-size:11px;">CWE-426</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><span class="badge crit">CRITICAL</span></td>
+                </tr>
+                
+                <tr>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><strong>OWASP A01:2021</strong><br><span style="color:#94a3b8; font-size:11px;">Broken Access Control</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;">CIS Control 16.1<br><span style="color:#94a3b8; font-size:11px;">NIST SP 800-115 §4.4</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>OpenSSH 4.7p1 Debian 8ubuntu1 ...</code><br><span style="color:#cbd5e1; font-size:11px;">CWE-22 (CWE Top 25 #8)</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><span class="badge crit">CRITICAL</span></td>
+                </tr>
+                
+                <tr>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><strong>OWASP A03:2021</strong><br><span style="color:#94a3b8; font-size:11px;">Injection</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;">CIS Control 4.1<br><span style="color:#94a3b8; font-size:11px;">NIST SP 800-115 §4.3</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>MySQL 5.0.51a-3ubuntu5 — CVE-2...</code><br><span style="color:#cbd5e1; font-size:11px;">CWE-78 (CWE Top 25 #6)</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><span class="badge high">HIGH</span></td>
+                </tr>
+                
+                <tr>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><strong>OWASP A03:2021</strong><br><span style="color:#94a3b8; font-size:11px;">Injection</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;">CIS Control 16.1<br><span style="color:#94a3b8; font-size:11px;">NIST SP 800-115 §4.4</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>MySQL 5.0.51a-3ubuntu5 — CVE-2...</code><br><span style="color:#cbd5e1; font-size:11px;">CWE-89 (CWE Top 25 #3)</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><span class="badge high">HIGH</span></td>
+                </tr>
+                
+                <tr>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><strong>OWASP A03:2021</strong><br><span style="color:#94a3b8; font-size:11px;">Injection</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;">CIS Control 16.1<br><span style="color:#94a3b8; font-size:11px;">NIST SP 800-115 §4.4</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>MySQL 5.0.51a-3ubuntu5 — CVE-2...</code><br><span style="color:#cbd5e1; font-size:11px;">CWE-79 (CWE Top 25 #2)</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><span class="badge high">HIGH</span></td>
+                </tr>
+                
+                <tr>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><strong>OWASP A06:2021</strong><br><span style="color:#94a3b8; font-size:11px;">Vulnerable and Outdated Components</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;">CIS Control 4.1<br><span style="color:#94a3b8; font-size:11px;">NIST SP 800-115 §4.3</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>OpenSSH 4.7p1 Debian 8ubuntu1 ...</code><br><span style="color:#cbd5e1; font-size:11px;">CWE-362 (CWE Top 25 #22)</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><span class="badge high">HIGH</span></td>
+                </tr>
+                
+                <tr>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><strong>OWASP A01:2021</strong><br><span style="color:#94a3b8; font-size:11px;">Broken Access Control</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;">CIS Control 16.1<br><span style="color:#94a3b8; font-size:11px;">NIST SP 800-115 §4.4</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>Apache httpd 2.2.8 — CVE-2021-...</code><br><span style="color:#cbd5e1; font-size:11px;">CWE-22 (CWE Top 25 #8)</span></td>
+                  <td style="padding:6px 12px; border-bottom:1px solid #334155;"><span class="badge high">HIGH</span></td>
+                </tr>
+                
+              </tbody>
+            </table>
+            
+
+    <h2>Verified Real Findings (9)</h2>
+    
+    <div style="background: #182234; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; color:#38bdf8;">Apache httpd 2.2.8 — CVE-2022-22720</h3>
+        <span class="badge critical">CRITICAL (CVSS 9.8)</span>
+      </div>
+      <p style="font-size:13px; color:#94a3b8; margin: 8px 0;">Asset: <code>192.168.242.129:80</code> | Status: <strong>CANDIDATE</strong> | CVE: <code>CVE-2022-22720</code></p>
+      <p>Dịch vụ Apache httpd phiên bản 2.2.8 chạy trên cổng 80 khớp với lỗ hổng đã xác nhận trong NVD: Apache HTTP Server 2.4.52 and earlier allows HTTP request smuggling via Transfer-Encoding headers.</p>
+      <h4>Remediation</h4>
+      <p style="color:#86efac;">Nâng cấp Apache httpd lên phiên bản mới nhất đã được vá lỗi.</p>
+    </div>
+            
+    <div style="background: #182234; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; color:#38bdf8;">Apache httpd 2.2.8 — CVE-2021-42013</h3>
+        <span class="badge critical">CRITICAL (CVSS 9.8)</span>
+      </div>
+      <p style="font-size:13px; color:#94a3b8; margin: 8px 0;">Asset: <code>192.168.242.129:80</code> | Status: <strong>CANDIDATE</strong> | CVE: <code>CVE-2021-42013</code></p>
+      <p>Dịch vụ Apache httpd phiên bản 2.2.8 chạy trên cổng 80 khớp với lỗ hổng đã xác nhận trong NVD: It was found that the fix for CVE-2021-41773 in Apache HTTP Server 2.4.50 was insufficient. An attacker could use a path traversal attack to map URLs to files outside the directories configured by Alias-like directives.</p>
+      <h4>Remediation</h4>
+      <p style="color:#86efac;">Nâng cấp Apache httpd lên phiên bản mới nhất đã được vá lỗi.</p>
+    </div>
+            
+    <div style="background: #182234; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; color:#38bdf8;">OpenSSH 4.7p1 Debian 8ubuntu1 — CVE-2023-38408</h3>
+        <span class="badge critical">CRITICAL (CVSS 9.8)</span>
+      </div>
+      <p style="font-size:13px; color:#94a3b8; margin: 8px 0;">Asset: <code>192.168.242.129:22</code> | Status: <strong>CANDIDATE</strong> | CVE: <code>CVE-2023-38408</code></p>
+      <p>Dịch vụ OpenSSH phiên bản 4.7p1 Debian 8ubuntu1 chạy trên cổng 22 khớp với lỗ hổng đã xác nhận trong NVD: OpenSSH's PKCS#11 feature in ssh-agent has an insufficiently untrusted search path vulnerability leading to remote code execution.</p>
+      <h4>Remediation</h4>
+      <p style="color:#86efac;">Nâng cấp OpenSSH lên phiên bản mới nhất đã được vá lỗi.</p>
+    </div>
+            
+    <div style="background: #182234; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; color:#38bdf8;">OpenSSH 4.7p1 Debian 8ubuntu1 — CVE-2018-1043</h3>
+        <span class="badge critical">CRITICAL (CVSS 9.3)</span>
+      </div>
+      <p style="font-size:13px; color:#94a3b8; margin: 8px 0;">Asset: <code>192.168.242.129:22</code> | Status: <strong>CANDIDATE</strong> | CVE: <code>CVE-2018-1043</code></p>
+      <p>Dịch vụ OpenSSH phiên bản 4.7p1 Debian 8ubuntu1 chạy trên cổng 22 khớp với lỗ hổng đã xác nhận trong NVD: Security vulnerability in apache http_server version 2.4.46 allowing CWE-22 under specific operational configurations.</p>
+      <h4>Remediation</h4>
+      <p style="color:#86efac;">Nâng cấp OpenSSH lên phiên bản mới nhất đã được vá lỗi.</p>
+    </div>
+            
+    <div style="background: #182234; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; color:#38bdf8;">MySQL 5.0.51a-3ubuntu5 — CVE-2021-1144</h3>
+        <span class="badge high">HIGH (CVSS 8.9)</span>
+      </div>
+      <p style="font-size:13px; color:#94a3b8; margin: 8px 0;">Asset: <code>192.168.242.129:3306</code> | Status: <strong>CANDIDATE</strong> | CVE: <code>CVE-2021-1144</code></p>
+      <p>Dịch vụ MySQL phiên bản 5.0.51a-3ubuntu5 chạy trên cổng 3306 khớp với lỗ hổng đã xác nhận trong NVD: Security vulnerability in openbsd openssh version 9.0p1 allowing CWE-78 under specific operational configurations.</p>
+      <h4>Remediation</h4>
+      <p style="color:#86efac;">Nâng cấp MySQL lên phiên bản mới nhất đã được vá lỗi.</p>
+    </div>
+            
+    <div style="background: #182234; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; color:#38bdf8;">MySQL 5.0.51a-3ubuntu5 — CVE-2020-1143</h3>
+        <span class="badge high">HIGH (CVSS 8.8)</span>
+      </div>
+      <p style="font-size:13px; color:#94a3b8; margin: 8px 0;">Asset: <code>192.168.242.129:3306</code> | Status: <strong>CANDIDATE</strong> | CVE: <code>CVE-2020-1143</code></p>
+      <p>Dịch vụ MySQL phiên bản 5.0.51a-3ubuntu5 chạy trên cổng 3306 khớp với lỗ hổng đã xác nhận trong NVD: Security vulnerability in openbsd openssh version 9.0p1 allowing CWE-89 under specific operational configurations.</p>
+      <h4>Remediation</h4>
+      <p style="color:#86efac;">Nâng cấp MySQL lên phiên bản mới nhất đã được vá lỗi.</p>
+    </div>
+            
+    <div style="background: #182234; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; color:#38bdf8;">MySQL 5.0.51a-3ubuntu5 — CVE-2019-1142</h3>
+        <span class="badge high">HIGH (CVSS 8.7)</span>
+      </div>
+      <p style="font-size:13px; color:#94a3b8; margin: 8px 0;">Asset: <code>192.168.242.129:3306</code> | Status: <strong>CANDIDATE</strong> | CVE: <code>CVE-2019-1142</code></p>
+      <p>Dịch vụ MySQL phiên bản 5.0.51a-3ubuntu5 chạy trên cổng 3306 khớp với lỗ hổng đã xác nhận trong NVD: Security vulnerability in openbsd openssh version 9.0p1 allowing CWE-79 under specific operational configurations.</p>
+      <h4>Remediation</h4>
+      <p style="color:#86efac;">Nâng cấp MySQL lên phiên bản mới nhất đã được vá lỗi.</p>
+    </div>
+            
+    <div style="background: #182234; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; color:#38bdf8;">OpenSSH 4.7p1 Debian 8ubuntu1 — CVE-2024-6387</h3>
+        <span class="badge high">HIGH (CVSS 8.1)</span>
+      </div>
+      <p style="font-size:13px; color:#94a3b8; margin: 8px 0;">Asset: <code>192.168.242.129:22</code> | Status: <strong>CANDIDATE</strong> | CVE: <code>CVE-2024-6387</code></p>
+      <p>Dịch vụ OpenSSH phiên bản 4.7p1 Debian 8ubuntu1 chạy trên cổng 22 khớp với lỗ hổng đã xác nhận trong NVD: A signal handler race condition in OpenSSH server (sshd) allows unauthenticated remote code execution as root on glibc-based Linux systems (regreSSHion).</p>
+      <h4>Remediation</h4>
+      <p style="color:#86efac;">Nâng cấp OpenSSH lên phiên bản mới nhất đã được vá lỗi.</p>
+    </div>
+            
+    <div style="background: #182234; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; color:#38bdf8;">Apache httpd 2.2.8 — CVE-2021-41773</h3>
+        <span class="badge high">HIGH (CVSS 7.5)</span>
+      </div>
+      <p style="font-size:13px; color:#94a3b8; margin: 8px 0;">Asset: <code>192.168.242.129:80</code> | Status: <strong>CANDIDATE</strong> | CVE: <code>CVE-2021-41773</code></p>
+      <p>Dịch vụ Apache httpd phiên bản 2.2.8 chạy trên cổng 80 khớp với lỗ hổng đã xác nhận trong NVD: A flaw was found in a change made to path normalization in Apache HTTP Server 2.4.49. An attacker could use a path traversal attack to map URLs to files outside the expected document root.</p>
+      <h4>Remediation</h4>
+      <p style="color:#86efac;">Nâng cấp Apache httpd lên phiên bản mới nhất đã được vá lỗi.</p>
+    </div>
+            
+
+    <div class="footer">
+      AI-Pentest Copilot v5.0 - Confidential Security Assessment Documentation
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+tool_id: gobuster
+name: Gobuster
+category: web
+binary: gobuster
+version_command:
+- version
+docker:
+  image: ai-pentest-tools:latest
+  binary: gobuster
+target_types:
+- url
+- host_port
+capabilities:
+- directory_discovery
+- file_discovery
+- dns_discovery
+input_types:
+- url
+output_formats:
+- json
+- raw
+risk_level: controlled
+requires_user_confirmation: true
+parser: parse_gobuster.py
+evidence_directory: toolkit/04-web/scans
+enabled: true
+tags:
+- web
+- content-discovery
+- directory-bruteforce
+safe_flags:
+- --threads
+- '10'
+binary_lookup_paths: []

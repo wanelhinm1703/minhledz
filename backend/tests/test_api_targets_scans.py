@@ -1,8 +1,9 @@
-import pytest
 from fastapi.testclient import TestClient
+
 from backend.app.main import app
 
 client = TestClient(app)
+
 
 def test_api_list_targets():
     res = client.get("/api/targets")
@@ -13,7 +14,9 @@ def test_api_list_targets():
 
 
 def test_api_detect_target_allowed():
-    res = client.post("/api/targets/detect", json={"input": "http://192.168.56.101:3000"})
+    res = client.post(
+        "/api/targets/detect", json={"input": "http://192.168.56.101:3000"}
+    )
     assert res.status_code == 200
     data = res.json()
     assert data["target_type"] == "url"
@@ -52,7 +55,9 @@ def test_api_get_evidence_file_security():
 
 def test_api_get_evidence_file_success():
     # Query an existing nmap structured file
-    res = client.get("/api/scans/file?path=03-network/scans/target-192.168.56.101/nmap/structured/nmap_result.json")
+    res = client.get(
+        "/api/scans/file?path=03-network/scans/target-192.168.56.101/nmap/structured/nmap_result.json"
+    )
     if res.status_code == 200:
         data = res.json()
         assert data["is_json"] is True

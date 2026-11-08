@@ -1,141 +1,135 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Security Assessment Report - 192.168.56.101</title>
+  <title>Báo cáo Đánh giá An toàn Thông tin - 192.168.56.101</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
-      line-height: 1.6;
-      padding: 40px;
-      margin: 0;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      background: #1e293b;
-      padding: 40px;
-      border-radius: 12px;
-      border: 1px solid #334155;
-    }
-
-    h1 {
-      color: #38bdf8;
-      border-bottom: 2px solid #334155;
-      padding-bottom: 12px;
-      margin-top: 0;
-    }
-
-    h2 {
-      color: #7dd3fc;
-      border-bottom: 1px solid #334155;
-      padding-bottom: 8px;
-      margin-top: 32px;
-    }
-
-    h3 {
-      color: #f8fafc;
-      margin-top: 24px;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-weight: bold;
-      font-size: 12px;
-    }
-
-    .crit {
-      background: #7f1d1d;
-      color: #fca5a5;
-    }
-
-    .high {
-      background: #7c2d12;
-      color: #fdba74;
-    }
-
-    .med {
-      background: #78350f;
-      color: #fde047;
-    }
-
-    .low {
-      background: #1e3a8a;
-      color: #93c5fd;
-    }
-
-    .stat-box {
-      display: flex;
-      gap: 12px;
-      margin: 20px 0;
-    }
-
-    .stat-item {
-      flex: 1;
-      padding: 12px;
-      border-radius: 8px;
-      text-align: center;
-      border: 1px solid #334155;
-    }
-
-    pre {
-      background: #090d16;
-      padding: 12px;
-      border-radius: 6px;
-      overflow-x: auto;
-      color: #a5f3fc;
-      font-family: monospace;
-    }
-
-    code {
-      background: #090d16;
-      padding: 2px 6px;
-      border-radius: 4px;
-      color: #38bdf8;
-      font-family: monospace;
-    }
-
-    .footer {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #334155;
-      font-size: 12px;
-      color: #64748b;
-      text-align: center;
-    }
+    body { font-family: "Times New Roman", Times, serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; padding: 40px; margin: 0; }
+    .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 40px; border-radius: 12px; border: 1px solid #334155; }
+    h1 { color: #38bdf8; border-bottom: 2px solid #334155; padding-bottom: 12px; margin-top: 0; font-family: "Times New Roman", Times, serif; }
+    h2 { color: #7dd3fc; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-top: 32px; font-family: "Times New Roman", Times, serif; }
+    h3 { color: #f8fafc; margin-top: 24px; font-family: "Times New Roman", Times, serif; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; font-family: "Times New Roman", Times, serif; }
+    .crit { background: #7f1d1d; color: #fca5a5; }
+    .high { background: #7c2d12; color: #fdba74; }
+    .med { background: #78350f; color: #fde047; }
+    .low { background: #1e3a8a; color: #93c5fd; }
+    .stat-box { display: flex; gap: 12px; margin: 20px 0; }
+    .stat-item { flex: 1; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #334155; font-family: "Times New Roman", Times, serif; }
+    pre { background: #090d16; padding: 12px; border-radius: 6px; overflow-x: auto; color: #a5f3fc; font-family: "Times New Roman", Times, serif; }
+    code { background: #090d16; padding: 2px 6px; border-radius: 4px; color: #38bdf8; font-family: "Times New Roman", Times, serif; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #334155; font-size: 12px; color: #64748b; text-align: center; font-family: "Times New Roman", Times, serif; }
   </style>
 </head>
-
 <body>
   <div class="container">
-    <h1>Security Assessment Report</h1>
-    <p><strong>Target:</strong> <code>192.168.56.101</code> | <strong>Campaign:</strong> Automated Lab Assessment |
-      <strong>Generated:</strong> 2026-09-14 15:52:13 UTC</p>
+    <h1>Báo cáo Đánh giá An toàn Thông tin & Kiểm thử Xâm nhập</h1>
+    <p><strong>Mục tiêu:</strong> <code>192.168.56.101</code> | <strong>Chiến dịch:</strong> E2E Demonstration | <strong>Thời gian tạo:</strong> 2026-09-19 23:30:00 UTC</p>
+    
+    
+            <div style="background:#451a1a; border:1px solid #dc2626; border-radius:8px; padding:14px; margin:20px 0; color:#fecaca;">
+              <strong>⚠️ TRẠNG THÁI KIỂM TOÁN: CHƯA ĐỦ BẰNG CHỨNG / KHÔNG CÓ PHÁT HIỆN THỰC TẾ</strong><br>
+              Các công cụ tự động chưa ghi nhận lỗ hổng thực tế có thể xác minh được.
+            </div>
+            
 
     <div class="stat-box">
-      <div class="stat-item crit"><span style="font-size:24px; font-weight:bold;">0</span><br>Critical</div>
-      <div class="stat-item high"><span style="font-size:24px; font-weight:bold;">0</span><br>High</div>
-      <div class="stat-item med"><span style="font-size:24px; font-weight:bold;">0</span><br>Medium</div>
-      <div class="stat-item low"><span style="font-size:24px; font-weight:bold;">0</span><br>Low</div>
+      <div class="stat-item crit"><span style="font-size:24px; font-weight:bold;">0</span><br>Nghiêm trọng (Critical)</div>
+      <div class="stat-item high"><span style="font-size:24px; font-weight:bold;">0</span><br>Mức độ Cao (High)</div>
+      <div class="stat-item med"><span style="font-size:24px; font-weight:bold;">0</span><br>Trung bình (Medium)</div>
+      <div class="stat-item low"><span style="font-size:24px; font-weight:bold;">0</span><br>Mức độ Thấp (Low)</div>
     </div>
 
-    <h2>Executive Summary</h2>
-    <p>This report compiles findings from multi-tool reconnaissance and vulnerability correlation adhering strictly to
-      read-only security validation standards.</p>
+    <h2>Kiểm toán Trạng thái Thực thi Công cụ Dò quét</h2>
+    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <thead>
+        <tr style="text-align:left; background:#0f172a;">
+          <th style="padding:6px 12px;">Công cụ</th>
+          <th style="padding:6px 12px;">Chế độ</th>
+          <th style="padding:6px 12px;">Bằng chứng Tin cậy</th>
+          <th style="padding:6px 12px;">Trạng thái / Chẩn đoán</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>httpx</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#f59e0b; font-weight:bold;">SIMULATED</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">KHÔNG (NO)</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">Hoàn tất bình thường</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>naabu</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#f59e0b; font-weight:bold;">SIMULATED</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">KHÔNG (NO)</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">Hoàn tất bình thường</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>nmap</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#f59e0b; font-weight:bold;">SIMULATED</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">KHÔNG (NO)</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">Hoàn tất bình thường</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>nuclei</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#f59e0b; font-weight:bold;">SIMULATED</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">KHÔNG (NO)</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">Hoàn tất bình thường</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>searchsploit</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#f59e0b; font-weight:bold;">SIMULATED</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">KHÔNG (NO)</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">Hoàn tất bình thường</td>
+            </tr>
+            
+            <tr>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;"><code>whatweb</code></td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#f59e0b; font-weight:bold;">SIMULATED</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155;">KHÔNG (NO)</td>
+              <td style="padding:6px 12px; border-bottom:1px solid #334155; color:#94a3b8;">Hoàn tất bình thường</td>
+            </tr>
+            
+      </tbody>
+    </table>
 
-    <h2>Total Findings: 0</h2>
+    
+            <h2>Hiện trạng Tuân thủ Quy chuẩn Quốc tế (OWASP / CWE / NIST / CIS)</h2>
+            <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:16px; margin:16px 0; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span style="font-size:14px; color:#94a3b8;">Trạng thái Tuân thủ Tiêu chuẩn:</span><br>
+                <strong style="font-size:18px; color:#10b981;">KHÔNG ĐẠT (FAILED)</strong>
+              </div>
+              <div style="text-align:right;">
+                <span style="font-size:14px; color:#94a3b8;">Điểm số Tuân thủ:</span><br>
+                <span style="font-size:24px; font-weight:bold; color:#10b981;">100/100</span>
+              </div>
+            </div>
+            <table style="width:100%; border-collapse:collapse; font-size:12px; margin-bottom:20px;">
+              <thead>
+                <tr style="text-align:left; background:#0f172a;">
+                  <th style="padding:6px 12px;">Tiêu chuẩn OWASP</th>
+                  <th style="padding:6px 12px;">Điều khoản CIS / NIST</th>
+                  <th style="padding:6px 12px;">Phát hiện Tương ứng</th>
+                  <th style="padding:6px 12px;">Mức độ Rủi ro</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan='4' style='padding:8px 12px;'>Toàn bộ kiểm tra cơ sở đều đạt. Không phát hiện vi phạm.</td></tr>
+              </tbody>
+            </table>
+            
 
+    <h2>Danh mục Lỗ hổng Đã Xác minh (0)</h2>
+    <p style='color:#94a3b8;'>Không ghi nhận lỗ hổng thực tế nào trong chu kỳ quét này.</p>
 
     <div class="footer">
-      AI-Pentest Copilot v5.0 - Confidential Security Assessment Documentation
+      AI-Pentest Copilot v6.0 - Tài liệu Kiểm toán An toàn Thông tin & Kiểm thử Xâm nhập
     </div>
   </div>
 </body>
-
 </html>

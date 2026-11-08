@@ -3,20 +3,11 @@
   "title": "KatanaResult",
   "description": "Schema for structured Katana web crawler results",
   "type": "object",
-  "required": [
-    "scan_metadata",
-    "endpoints"
-  ],
+  "required": ["scan_metadata", "endpoints"],
   "properties": {
     "scan_metadata": {
       "type": "object",
-      "required": [
-        "tool",
-        "target",
-        "command",
-        "timestamp",
-        "exit_code"
-      ],
+      "required": ["tool", "target", "command", "timestamp", "exit_code"],
       "properties": {
         "tool": {
           "type": "string"
@@ -45,9 +36,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "endpoint"
-        ],
+        "required": ["endpoint"],
         "properties": {
           "endpoint": {
             "type": "string"

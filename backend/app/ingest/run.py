@@ -4,23 +4,23 @@ AI-Pentest Copilot - Knowledge Base Ingestion Runner.
 Loads authoritative CVE, CWE, MITRE, and CISA KEV data into SQLite.
 Populates product_version_index for high-performance correlation.
 """
+
 from __future__ import annotations
 
 import argparse
-import sys
 import time
 
-from backend.app.storage.db import db
 from backend.app.ingest.cwe import ingest_cwes
-from backend.app.ingest.nvd import ingest_nvd_cves
-from backend.app.ingest.mitre import ingest_mitre_techniques
 from backend.app.ingest.kev import ingest_cisa_kev
+from backend.app.ingest.mitre import ingest_mitre_techniques
+from backend.app.ingest.nvd import ingest_nvd_cves
+from backend.app.storage.db import db
 
 
 def populate_product_version_index(conn):
     cursor = conn.cursor()
     cursor.execute("DELETE FROM product_version_index")
-    
+
     # Query distinct vendor, product, version from cve_affected
     cursor.execute("""
         SELECT vendor, product, version_exact, GROUP_CONCAT(cve_id) 
@@ -83,7 +83,9 @@ def run_ingest(update: bool = False):
 
 def main():
     parser = argparse.ArgumentParser(description="AI-Pentest Copilot KB Ingest")
-    parser.add_argument("--update", action="store_true", help="Perform incremental update")
+    parser.add_argument(
+        "--update", action="store_true", help="Perform incremental update"
+    )
     args = parser.parse_args()
     run_ingest(update=args.update)
 

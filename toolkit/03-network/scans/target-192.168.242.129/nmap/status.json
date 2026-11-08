@@ -1,0 +1,19 @@
+{
+  "tool": "nmap",
+  "target_id": "target-192.168.242.129",
+  "target_url": "http://192.168.242.129",
+  "started_at": "2026-09-19T22:53:30.399246+00:00",
+  "finished_at": "2026-09-19T22:53:42.149507+00:00",
+  "duration_sec": 11.75,
+  "mode": "real",
+  "reason": null,
+  "exit_code": 0,
+  "binary_available": true,
+  "evidence_trustworthy": true,
+  "raw_path": "raw/nmap_raw.xml",
+  "raw_sha256": "880d31ba188c6079b1e8cd42f08953864bc6a7a0a8766858c03855354b7c6b42",
+  "raw_size_bytes": 6609,
+  "finding_count": 1,
+  "warnings": [],
+  "errors": []
+}

@@ -1,0 +1,27 @@
+{
+  "scan_metadata": {
+    "tool": "httpx",
+    "target": "192.168.242.129",
+    "command": "httpx -u 192.168.242.129 -status-code -title -tech-detect -web-server -json -o /run/media/ducthuan/54AC7DBAAC7D96E8/Shared/Projects/ai-pentest-copilot/toolkit/04-web/scans/target-192.168.242.129/httpx/raw/httpx_raw.jsonl",
+    "arguments": "-u 192.168.242.129 -status-code -title -tech-detect -web-server -json -o /run/media/ducthuan/54AC7DBAAC7D96E8/Shared/Projects/ai-pentest-copilot/toolkit/04-web/scans/target-192.168.242.129/httpx/raw/httpx_raw.jsonl",
+    "timestamp": "2026-09-19T22:53:43.395521+00:00",
+    "duration_seconds": 1.2414207458496094,
+    "exit_code": 0
+  },
+  "results": [
+    {
+      "url": "http://192.168.242.129",
+      "input": "192.168.242.129",
+      "host": "192.168.242.129",
+      "port": 80,
+      "scheme": "http",
+      "status_code": 200,
+      "title": "Metasploitable2 - Linux",
+      "webserver": "Apache/2.2.8 (Ubuntu) DAV/2",
+      "content_type": "text/html",
+      "content_length": 891,
+      "technologies": [],
+      "response_headers": {}
+    }
+  ]
+}

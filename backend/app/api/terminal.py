@@ -7,19 +7,24 @@ from __future__ import annotations
 import asyncio
 import os
 import pathlib
+import platform
 import re
-import shlex
 import subprocess
 import threading
 import time
-from typing import Optional, List, Dict, Any
+
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
+
+from backend.app.services.agents.orchestrator import orchestrator, CommandPreview
 
 router = APIRouter(prefix="/terminal", tags=["terminal"])
 ws_terminal_router = APIRouter(tags=["terminal_ws"])
 
 root_dir = pathlib.Path(__file__).resolve().parent.parent.parent.parent
+
+# Cross-platform execution flag
+IS_WINDOWS = platform.system() == "Windows"
 
 # Maintain active working directory per session (default to workspace root)
 CURRENT_CWD = root_dir
@@ -35,18 +40,72 @@ BLOCKED_PATTERNS = [
 ]
 
 
+def get_shell_args(exec_cmd: str) -> list[str]:
+    """Return appropriate shell command line for the host OS."""
+    if IS_WINDOWS:
+        ps_command = f"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; {exec_cmd}"
+        return [
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            f"& {{ {ps_command} }}",
+        ]
+    else:
+        # Kali Linux / Ubuntu / Docker / POSIX
+        shell_bin = "/bin/bash" if os.path.exists("/bin/bash") else "/bin/sh"
+        return [shell_bin, "-c", exec_cmd]
+
+
+ANSI_ESCAPE_RE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+
+
+def strip_ansi(s: str) -> str:
+    """Remove ANSI terminal control and color sequences for clean web rendering."""
+    return ANSI_ESCAPE_RE.sub("", s)
+
+
 def get_terminal_env() -> dict:
-    """Prepare complete execution environment with PYTHONPATH and tool PATHs."""
+    """Prepare complete execution environment with PYTHONPATH and tool PATHs for Kali Linux."""
     env = os.environ.copy()
     env["PYTHONPATH"] = str(root_dir)
     env["PYTHONUNBUFFERED"] = "1"
-    nmap_dir = r"C:\Program Files (x86)\Nmap"
-    if os.path.exists(nmap_dir):
-        env["PATH"] = f"{nmap_dir};{env.get('PATH', '')}"
+    env["TERM"] = "xterm-256color"
+    env["LC_ALL"] = "C.UTF-8"
+    env["LANG"] = "C.UTF-8"
+    if "HOME" not in env:
+        env["HOME"] = str(pathlib.Path.home())
+    if "USER" not in env:
+        env["USER"] = os.environ.get("USER", "kali")
+    if "SHELL" not in env:
+        env["SHELL"] = "/bin/bash" if os.path.exists("/bin/bash") else "/bin/sh"
+
+    if IS_WINDOWS:
+        nmap_dir = r"C:\Program Files (x86)\Nmap"
+        if os.path.exists(nmap_dir):
+            env["PATH"] = f"{nmap_dir};{env.get('PATH', '')}"
+    else:
+        # Prepend venv/bin so python/pip/pytest always use local virtual environment
+        venv_bin = str(root_dir / "venv" / "bin")
+        tool_paths = [
+            venv_bin,
+            "/usr/local/sbin",
+            "/usr/local/bin",
+            "/usr/sbin",
+            "/usr/bin",
+            "/sbin",
+            "/bin",
+            "/snap/bin",
+        ]
+        valid_paths = [p for p in tool_paths if os.path.exists(p)]
+        env["PATH"] = ":".join(valid_paths) + f":{env.get('PATH', '')}"
     return env
 
 
-def translate_command(cmd: str, current_dir: pathlib.Path) -> tuple[str, Optional[pathlib.Path], bool]:
+def translate_command(
+    cmd: str, current_dir: pathlib.Path
+) -> tuple[str, pathlib.Path | None, bool]:
     """Translate Linux/Bash aliases to PowerShell and handle shell built-ins like cd."""
     trimmed = cmd.strip()
 
@@ -62,14 +121,30 @@ def translate_command(cmd: str, current_dir: pathlib.Path) -> tuple[str, Optiona
             new_dir = (current_dir / target_path_str).resolve()
 
         if new_dir.exists() and new_dir.is_dir():
-            return f"Set-Location '{new_dir}'", new_dir, True
+            cmd_cd = f"Set-Location '{new_dir}'" if IS_WINDOWS else f"cd '{new_dir}'"
+            return cmd_cd, new_dir, True
         else:
             raise FileNotFoundError(f"Directory not found: {target_path_str}")
 
-    # Aliases translation
+    # Auto clean stale tmux hollywood session if invoked
+    if trimmed.startswith("hollywood"):
+        try:
+            subprocess.run(["tmux", "kill-session", "-t", "hollywood"], capture_output=True)
+        except Exception:
+            pass
+
+    # On Linux / Kali: Keep native bash commands (no PowerShell translation needed)
+    if not IS_WINDOWS:
+        return trimmed, current_dir, False
+
+    # On Windows: Translate Linux aliases to PowerShell cmdlets
     cmd_lower = trimmed.lower()
     if cmd_lower in ("ls -la", "ls -l", "ll", "ls -a", "dir /a"):
-        return "Get-ChildItem -Force | Format-Table Mode, Length, Name", current_dir, False
+        return (
+            "Get-ChildItem -Force | Format-Table Mode, Length, Name",
+            current_dir,
+            False,
+        )
     elif cmd_lower == "ls":
         return "Get-ChildItem | Format-Table Mode, Length, Name", current_dir, False
     elif cmd_lower == "pwd":
@@ -97,8 +172,8 @@ def decode_output(raw: bytes) -> str:
 
 class ExecuteCommandRequest(BaseModel):
     command: str
-    target_id: Optional[str] = None
-    timeout_seconds: Optional[int] = 180
+    target_id: str | None = None
+    timeout_seconds: int | None = 180
 
 
 class ExecuteCommandResponse(BaseModel):
@@ -112,9 +187,13 @@ class ExecuteCommandResponse(BaseModel):
 
 
 @router.get("/presets")
-def get_command_presets(target: Optional[str] = "192.168.100.153"):
+def get_command_presets(target: str | None = "192.168.100.153"):
     """Return recommended reconnaissance commands tailored to target."""
-    clean_target = target.replace("http://", "").replace("https://", "").replace("/", "") if target else "127.0.0.1"
+    clean_target = (
+        target.replace("http://", "").replace("https://", "").replace("/", "")
+        if target
+        else "127.0.0.1"
+    )
     host_only = clean_target.split(":")[0]
 
     return {
@@ -171,11 +250,22 @@ def get_command_presets(target: Optional[str] = "192.168.100.153"):
             {
                 "id": "ping_check",
                 "label": f"📡 Ping Probe ({host_only})",
-                "command": f"ping -n 4 {host_only}",
+                "command": f"ping -n 4 {host_only}" if IS_WINDOWS else f"ping -c 4 {host_only}",
                 "description": "Kiểm tra độ trễ và khả năng kết nối tới mục tiêu",
             },
         ],
     }
+
+
+class CopilotCommandRequest(BaseModel):
+    prompt: str
+    target: str | None = None
+
+
+@router.post("/copilot-command", response_model=CommandPreview)
+def copilot_command_translate(req: CopilotCommandRequest):
+    """Translate natural language request into safe CLI command preview."""
+    return orchestrator.translate_natural_language_command(req.prompt, req.target)
 
 
 @router.post("/execute", response_model=ExecuteCommandResponse)
@@ -185,6 +275,38 @@ async def execute_command(req: ExecuteCommandRequest):
     cmd = req.command.strip()
     if not cmd:
         raise HTTPException(status_code=400, detail="Command cannot be empty.")
+
+    # Handle @copilot natural language translation
+    if cmd.startswith("@copilot"):
+        preview = orchestrator.translate_natural_language_command(cmd, req.target_id)
+        if not preview.is_safe or not preview.scope_allowed:
+            return ExecuteCommandResponse(
+                command=cmd,
+                stdout="",
+                stderr=preview.error or preview.explanation,
+                exit_code=1,
+                duration_seconds=0.01,
+                status="guardrail_refusal",
+                cwd=str(CURRENT_CWD),
+            )
+        stdout_msg = (
+            f"[COPILOT PROPOSED COMMAND]\n"
+            f"> {preview.proposed_command}\n\n"
+            f"[EXPLANATION]\n"
+            f"{preview.explanation}\n\n"
+            f"[STATUS: PREVIEW ONLY - APPROVAL REQUIRED]\n"
+            f"Lệnh này đã được áp dụng cờ an toàn: {', '.join(preview.safe_flags_applied)}.\n"
+            f"Bạn có thể sao chép hoặc chạy trực tiếp lệnh trên để bắt đầu."
+        )
+        return ExecuteCommandResponse(
+            command=cmd,
+            stdout=stdout_msg,
+            stderr="",
+            exit_code=0,
+            duration_seconds=0.01,
+            status="copilot_preview",
+            cwd=str(CURRENT_CWD),
+        )
 
     # Guardrail check
     for pattern in BLOCKED_PATTERNS:
@@ -235,19 +357,10 @@ async def execute_command(req: ExecuteCommandRequest):
     env = get_terminal_env()
 
     try:
-        # Wrap execution in PowerShell with UTF-8 encoding
-        ps_command = f"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; {exec_cmd}"
-
         def run_sync():
+            cmd_args = get_shell_args(exec_cmd)
             return subprocess.run(
-                [
-                    "powershell.exe",
-                    "-NoProfile",
-                    "-ExecutionPolicy",
-                    "Bypass",
-                    "-Command",
-                    f"& {{ {ps_command} }}",
-                ],
+                cmd_args,
                 capture_output=True,
                 cwd=str(CURRENT_CWD),
                 env=env,
@@ -295,60 +408,127 @@ async def execute_command(req: ExecuteCommandRequest):
 async def terminal_websocket(websocket: WebSocket):
     global CURRENT_CWD
     await websocket.accept()
-    active_process: Optional[subprocess.Popen] = None
-    exec_task: Optional[asyncio.Task] = None
+    active_process: subprocess.Popen | None = None
+    exec_task: asyncio.Task | None = None
+    active_master_fd: int | None = None
     loop = asyncio.get_running_loop()
 
     async def run_command_stream(exec_cmd: str, raw_cmd: str):
-        nonlocal active_process
+        nonlocal active_process, active_master_fd
         start_time = time.time()
         env = get_terminal_env()
-        ps_command = f"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; {exec_cmd}"
-        queue: asyncio.Queue[Optional[tuple[str, str]]] = asyncio.Queue()
+        queue: asyncio.Queue[tuple[str, str] | None] = asyncio.Queue()
+
+        use_pty = not IS_WINDOWS
+        master_fd = None
+        slave_fd = None
+
+        if use_pty:
+            try:
+                import fcntl
+                import pty
+                import struct
+                import termios
+
+                master_fd, slave_fd = pty.openpty()
+                winsize = struct.pack("HHHH", 30, 120, 0, 0)
+                fcntl.ioctl(master_fd, termios.TIOCSWINSZ, winsize)
+                active_master_fd = master_fd
+            except Exception:
+                use_pty = False
+                master_fd, slave_fd = None, None
+                active_master_fd = None
 
         try:
-            active_process = subprocess.Popen(
-                [
-                    "powershell.exe",
-                    "-NoProfile",
-                    "-ExecutionPolicy",
-                    "Bypass",
-                    "-Command",
-                    f"& {{ {ps_command} }}",
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                cwd=str(CURRENT_CWD),
-                env=env,
-                bufsize=1,
-            )
-
-            def reader(pipe, stream_name):
+            cmd_args = get_shell_args(exec_cmd)
+            if use_pty and slave_fd is not None:
+                active_process = subprocess.Popen(
+                    cmd_args,
+                    stdin=slave_fd,
+                    stdout=slave_fd,
+                    stderr=slave_fd,
+                    cwd=str(CURRENT_CWD),
+                    env=env,
+                    close_fds=True,
+                )
                 try:
-                    for line in iter(pipe.readline, b""):
-                        text = decode_output(line).rstrip("\r\n")
-                        loop.call_soon_threadsafe(queue.put_nowait, (stream_name, text))
+                    os.close(slave_fd)
                 except Exception:
                     pass
-                finally:
+
+                def pty_reader():
                     try:
-                        pipe.close()
+                        while True:
+                            raw = os.read(master_fd, 4096)
+                            if not raw:
+                                break
+                            text = decode_output(raw)
+                            clean = strip_ansi(text)
+                            for line in clean.splitlines():
+                                if line.strip():
+                                    loop.call_soon_threadsafe(queue.put_nowait, ("stdout", line))
+                    except (OSError, ValueError):
+                        pass
+                    finally:
+                        try:
+                            os.close(master_fd)
+                        except Exception:
+                            pass
+
+                t_pty = threading.Thread(target=pty_reader, daemon=True)
+                t_pty.start()
+
+                async def monitor_exit():
+                    if active_process:
+                        await asyncio.to_thread(active_process.wait)
+                    await asyncio.to_thread(t_pty.join)
+                    await queue.put(None)
+
+                asyncio.create_task(monitor_exit())
+
+            else:
+                active_process = subprocess.Popen(
+                    cmd_args,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    cwd=str(CURRENT_CWD),
+                    env=env,
+                    bufsize=0,
+                )
+
+                def reader(pipe, stream_name):
+                    try:
+                        for line in iter(pipe.readline, b""):
+                            text = decode_output(line).rstrip("\r\n")
+                            clean = strip_ansi(text)
+                            if clean.strip():
+                                loop.call_soon_threadsafe(queue.put_nowait, (stream_name, clean))
                     except Exception:
                         pass
+                    finally:
+                        try:
+                            pipe.close()
+                        except Exception:
+                            pass
 
-            t1 = threading.Thread(target=reader, args=(active_process.stdout, "stdout"), daemon=True)
-            t2 = threading.Thread(target=reader, args=(active_process.stderr, "stderr"), daemon=True)
-            t1.start()
-            t2.start()
+                t1 = threading.Thread(
+                    target=reader, args=(active_process.stdout, "stdout"), daemon=True
+                )
+                t2 = threading.Thread(
+                    target=reader, args=(active_process.stderr, "stderr"), daemon=True
+                )
+                t1.start()
+                t2.start()
 
-            async def monitor_exit():
-                if active_process:
-                    await asyncio.to_thread(active_process.wait)
-                await asyncio.to_thread(t1.join)
-                await asyncio.to_thread(t2.join)
-                await queue.put(None)
+                async def monitor_exit():
+                    if active_process:
+                        await asyncio.to_thread(active_process.wait)
+                    await asyncio.to_thread(t1.join)
+                    await asyncio.to_thread(t2.join)
+                    await queue.put(None)
 
-            asyncio.create_task(monitor_exit())
+                asyncio.create_task(monitor_exit())
 
             while True:
                 item = await queue.get()
@@ -358,13 +538,19 @@ async def terminal_websocket(websocket: WebSocket):
                 await websocket.send_json({"type": stream_type, "data": text})
 
             duration = round(time.time() - start_time, 2)
-            exit_code = active_process.returncode if active_process and active_process.returncode is not None else 0
-            await websocket.send_json({
-                "type": "exit",
-                "code": exit_code,
-                "duration": duration,
-                "cwd": str(CURRENT_CWD),
-            })
+            exit_code = (
+                active_process.returncode
+                if active_process and active_process.returncode is not None
+                else 0
+            )
+            await websocket.send_json(
+                {
+                    "type": "exit",
+                    "code": exit_code,
+                    "duration": duration,
+                    "cwd": str(CURRENT_CWD),
+                }
+            )
         except asyncio.CancelledError:
             if active_process and active_process.poll() is None:
                 try:
@@ -374,32 +560,72 @@ async def terminal_websocket(websocket: WebSocket):
             raise
         except Exception as err:
             await websocket.send_json({"type": "stderr", "data": str(err)})
-            await websocket.send_json({"type": "exit", "code": 1, "duration": 0.0, "cwd": str(CURRENT_CWD)})
+            await websocket.send_json(
+                {"type": "exit", "code": 1, "duration": 0.0, "cwd": str(CURRENT_CWD)}
+            )
         finally:
             active_process = None
+            active_master_fd = None
 
     try:
         # Send initial connection info
-        await websocket.send_json({
-            "type": "ready",
-            "cwd": str(CURRENT_CWD),
-            "message": "AI-Pentest Copilot Terminal Engine Connected (PowerShell 5.1 / Python 3.14)",
-        })
+        await websocket.send_json(
+            {
+                "type": "ready",
+                "cwd": str(CURRENT_CWD),
+                "message": f"AI-Pentest Copilot Terminal Engine Connected ({'PowerShell 5.1' if IS_WINDOWS else 'Bash Native + PTY (Kali Linux)'} / Python {platform.python_version()})",
+            }
+        )
 
         while True:
             msg = await websocket.receive_json()
             msg_type = msg.get("type", "execute")
 
             if msg_type == "kill":
+                if active_master_fd is not None:
+                    try:
+                        os.write(active_master_fd, b"\x03")
+                    except Exception:
+                        pass
                 if active_process and active_process.poll() is None:
                     try:
-                        active_process.kill()
+                        active_process.terminate()
+                        time.sleep(0.1)
+                        if active_process.poll() is None:
+                            active_process.kill()
                     except Exception:
                         pass
                 if exec_task and not exec_task.done():
                     exec_task.cancel()
-                await websocket.send_json({"type": "stderr", "data": "\n[!] Process terminated by user (SIGINT/Ctrl+C)"})
-                await websocket.send_json({"type": "exit", "code": -1, "duration": 0.0, "cwd": str(CURRENT_CWD)})
+                await websocket.send_json(
+                    {
+                        "type": "stderr",
+                        "data": "\n[!] Process terminated by user (SIGINT/Ctrl+C)",
+                    }
+                )
+                await websocket.send_json(
+                    {
+                        "type": "exit",
+                        "code": -1,
+                        "duration": 0.0,
+                        "cwd": str(CURRENT_CWD),
+                    }
+                )
+                continue
+
+            if msg_type == "input":
+                user_input = msg.get("data", "")
+                if active_master_fd is not None:
+                    try:
+                        os.write(active_master_fd, user_input.encode("utf-8"))
+                    except Exception:
+                        pass
+                elif active_process and active_process.stdin and active_process.poll() is None:
+                    try:
+                        active_process.stdin.write(user_input.encode("utf-8"))
+                        active_process.stdin.flush()
+                    except Exception:
+                        pass
                 continue
 
             if msg_type == "execute":
@@ -408,18 +634,32 @@ async def terminal_websocket(websocket: WebSocket):
                     continue
 
                 if active_process and active_process.poll() is None:
-                    await websocket.send_json({"type": "stderr", "data": "[!] Another process is already running. Please cancel or wait."})
+                    await websocket.send_json(
+                        {
+                            "type": "stderr",
+                            "data": "[!] Another process is already running. Please cancel or wait.",
+                        }
+                    )
                     continue
 
                 # Guardrail check
                 is_blocked = False
                 for pattern in BLOCKED_PATTERNS:
                     if re.search(pattern, cmd, re.IGNORECASE):
-                        await websocket.send_json({
-                            "type": "stderr",
-                            "data": f"[!] Guardrail Refusal: Command contains restricted dangerous operation ('{pattern}').",
-                        })
-                        await websocket.send_json({"type": "exit", "code": 1, "duration": 0.0, "cwd": str(CURRENT_CWD)})
+                        await websocket.send_json(
+                            {
+                                "type": "stderr",
+                                "data": f"[!] Guardrail Refusal: Command contains restricted dangerous operation ('{pattern}').",
+                            }
+                        )
+                        await websocket.send_json(
+                            {
+                                "type": "exit",
+                                "code": 1,
+                                "duration": 0.0,
+                                "cwd": str(CURRENT_CWD),
+                            }
+                        )
                         is_blocked = True
                         break
                 if is_blocked:
@@ -428,7 +668,14 @@ async def terminal_websocket(websocket: WebSocket):
                 # Clear screen
                 if cmd.lower() in ("clear", "cls"):
                     await websocket.send_json({"type": "clear"})
-                    await websocket.send_json({"type": "exit", "code": 0, "duration": 0.0, "cwd": str(CURRENT_CWD)})
+                    await websocket.send_json(
+                        {
+                            "type": "exit",
+                            "code": 0,
+                            "duration": 0.0,
+                            "cwd": str(CURRENT_CWD),
+                        }
+                    )
                     continue
 
                 # Translate command & cd
@@ -436,12 +683,31 @@ async def terminal_websocket(websocket: WebSocket):
                     exec_cmd, new_dir, is_cd = translate_command(cmd, CURRENT_CWD)
                     if is_cd:
                         CURRENT_CWD = new_dir
-                        await websocket.send_json({"type": "stdout", "data": f"Changed directory to: {CURRENT_CWD}"})
-                        await websocket.send_json({"type": "exit", "code": 0, "duration": 0.01, "cwd": str(CURRENT_CWD)})
+                        await websocket.send_json(
+                            {
+                                "type": "stdout",
+                                "data": f"Changed directory to: {CURRENT_CWD}",
+                            }
+                        )
+                        await websocket.send_json(
+                            {
+                                "type": "exit",
+                                "code": 0,
+                                "duration": 0.01,
+                                "cwd": str(CURRENT_CWD),
+                            }
+                        )
                         continue
                 except FileNotFoundError as fnf:
                     await websocket.send_json({"type": "stderr", "data": str(fnf)})
-                    await websocket.send_json({"type": "exit", "code": 1, "duration": 0.01, "cwd": str(CURRENT_CWD)})
+                    await websocket.send_json(
+                        {
+                            "type": "exit",
+                            "code": 1,
+                            "duration": 0.01,
+                            "cwd": str(CURRENT_CWD),
+                        }
+                    )
                     continue
 
                 # Execute with real-time streaming

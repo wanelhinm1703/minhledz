@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Optional
-from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+
 from backend.app.services.llm import llm_service
 
 router = APIRouter(tags=["llm"])
@@ -12,7 +12,7 @@ router = APIRouter(tags=["llm"])
 
 class SwitchProviderRequest(BaseModel):
     provider: str
-    model: Optional[str] = None
+    model: str | None = None
 
 
 @router.get("/providers")
@@ -28,7 +28,9 @@ def get_providers():
 def switch_provider(req: SwitchProviderRequest):
     success = llm_service.switch_provider(req.provider, req.model)
     if not success:
-        raise HTTPException(status_code=400, detail=f"Invalid or unavailable provider: {req.provider}")
+        raise HTTPException(
+            status_code=400, detail=f"Invalid or unavailable provider: {req.provider}"
+        )
     return {
         "status": "switched",
         "active_provider": llm_service.active_provider,

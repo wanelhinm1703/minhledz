@@ -1,0 +1,67 @@
+{
+  "target_id": "test-target-pillar4-auto",
+  "campaign_name": "Automated Lab Assessment",
+  "generated_at": "2026-09-19 23:44:43 UTC",
+  "summary": {
+    "total": 1,
+    "by_severity": {
+      "CRITICAL": 0,
+      "HIGH": 1,
+      "MEDIUM": 0,
+      "LOW": 0,
+      "INFO": 0
+    },
+    "by_status": {
+      "CANDIDATE": 0,
+      "UNVERIFIED": 0,
+      "VERIFIED": 1,
+      "FALSE_POSITIVE": 0,
+      "RESOLVED": 0
+    },
+    "trustworthy_count": 1,
+    "simulated_count": 0,
+    "has_insufficient_evidence": false
+  },
+  "compliance": {
+    "compliance_score": 75,
+    "status": "NON-COMPLIANT (CRITICAL/HIGH VIOLATIONS)",
+    "total_active_violations": 1,
+    "critical_high_count": 1,
+    "owasp_top_10_breakdown": {
+      "A01:2021": 1
+    },
+    "cwe_top_25_hits": [],
+    "nist_sp_800_115_sections": [
+      "NIST SP 800-115 \u00a74.3"
+    ],
+    "cis_controls_v8": [
+      "CIS Control 4.1"
+    ]
+  },
+  "findings": [
+    {
+      "target_id": "test-target-pillar4-auto",
+      "title": "Exposed Database Management Interface",
+      "cve_id": "CVE-2023-9999",
+      "cwe_id": "CWE-284",
+      "cvss_score": 8.5,
+      "cvss_severity": "HIGH",
+      "cvss_v4_score": null,
+      "cvss_v4_vector": null,
+      "cvss_v4_severity": null,
+      "is_cisa_kev": false,
+      "epss_score": null,
+      "epss_percentile": null,
+      "status": "VERIFIED",
+      "affected_asset": "test-target-pillar4-auto:5432",
+      "description": "PostgreSQL port open without network ACL restriction.",
+      "remediation": "Bind PostgreSQL to localhost or private VPC subnet.",
+      "evidence_chain": [],
+      "trustworthy": true,
+      "is_simulated": false,
+      "id": "FIND-AUTO-P4-TEST",
+      "created_at": "2026-09-19T23:44:43.566956+00:00",
+      "updated_at": "2026-09-19T23:44:43.566956+00:00"
+    }
+  ]
+}

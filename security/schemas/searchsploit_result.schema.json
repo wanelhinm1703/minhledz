@@ -3,21 +3,11 @@
   "title": "SearchsploitResult",
   "description": "Schema for structured SearchSploit vulnerability reference lookup results",
   "type": "object",
-  "required": [
-    "scan_metadata",
-    "query",
-    "results"
-  ],
+  "required": ["scan_metadata", "query", "results"],
   "properties": {
     "scan_metadata": {
       "type": "object",
-      "required": [
-        "tool",
-        "target",
-        "command",
-        "timestamp",
-        "exit_code"
-      ],
+      "required": ["tool", "target", "command", "timestamp", "exit_code"],
       "properties": {
         "tool": {
           "type": "string"
@@ -49,11 +39,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "title",
-          "type",
-          "path"
-        ],
+        "required": ["title", "type", "path"],
         "properties": {
           "title": {
             "type": "string"

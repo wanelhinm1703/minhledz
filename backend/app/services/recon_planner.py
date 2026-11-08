@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Any
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from backend.app.schemas.target import Target, TargetType
@@ -11,16 +12,16 @@ class ReconStep(BaseModel):
     tool: str
     purpose: str
     command_template: str
-    safety_constraints: List[str] = Field(default_factory=list)
-    profile: Optional[str] = None
+    safety_constraints: list[str] = Field(default_factory=list)
+    profile: str | None = None
 
 
 class ReconPlan(BaseModel):
     target_id: str
     target_type: TargetType
     target_host: str
-    capabilities: List[str]
-    steps: List[ReconStep]
+    capabilities: list[str]
+    steps: list[ReconStep]
     estimated_duration_seconds: int = 120
     safety_summary: str = "Read-only non-destructive reconnaissance pipeline"
 
@@ -40,27 +41,51 @@ class ReconPlanner:
     def plan(
         cls,
         target: Target,
-        requested_tools: Optional[List[str]] = None,
-        detected_services: Optional[List[Dict[str, Any]]] = None,
+        requested_tools: list[str] | None = None,
+        detected_services: list[dict[str, Any]] | None = None,
     ) -> ReconPlan:
         capabilities = []
         steps = []
         step_idx = 1
 
-        is_web = target.type == TargetType.URL or (target.port in [80, 443, 3000, 8080, 8443])
+        is_web = target.type == TargetType.URL or (
+            target.port in [80, 443, 3000, 8080, 8443]
+        )
 
         # 1. Base capabilities assignment
         if is_web:
-            capabilities.extend(["web", "http_probing", "vulnerability_detection", "service_discovery"])
+            capabilities.extend(
+                ["web", "http_probing", "vulnerability_detection", "service_discovery"]
+            )
         elif target.type == TargetType.HOST_PORT:
             capabilities.extend(["network", "service_discovery"])
-        elif target.type in (TargetType.IPV4, TargetType.IPV6, TargetType.DOMAIN, TargetType.HOSTNAME):
+        elif target.type in (
+            TargetType.IPV4,
+            TargetType.IPV6,
+            TargetType.DOMAIN,
+            TargetType.HOSTNAME,
+        ):
             capabilities.extend(["network", "port_discovery", "service_discovery"])
         elif target.type == TargetType.CIDR:
             capabilities.extend(["network", "host_discovery"])
 
         # 2. If explicit tools requested by user/workflow: prioritize them
         if requested_tools:
+            expanded_requested = []
+            for rt in requested_tools:
+                rtl = rt.lower().strip()
+                if rtl in ("all", "full"):
+                    expanded_requested.extend([
+                        "masscan", "rustscan", "naabu", "nmap", "httpx", "whatweb", "nikto", "gobuster", "ffuf", "katana", "nuclei", "searchsploit", "enum4linux", "smbclient", "snmpwalk", "ldapsearch"
+                    ])
+                elif rtl in ("network", "network-all"):
+                    expanded_requested.extend(["masscan", "rustscan", "naabu", "nmap"])
+                elif rtl in ("web", "web-all"):
+                    expanded_requested.extend(["httpx", "whatweb", "nikto", "gobuster", "ffuf", "katana", "nuclei"])
+                else:
+                    expanded_requested.append(rtl)
+            requested_tools = list(dict.fromkeys(expanded_requested))
+
             for req_tool in requested_tools:
                 req_lower = req_tool.lower().strip()
                 if req_lower == "masscan":
@@ -71,7 +96,10 @@ class ReconPlanner:
                             tool="masscan",
                             purpose="Fast large-scale TCP port discovery",
                             command_template=f"masscan -p1-1000 {target.host} --rate 1000",
-                            safety_constraints=["Rate-limited to 1000 pps", "Read-only SYN probe"],
+                            safety_constraints=[
+                                "Rate-limited to 1000 pps",
+                                "Read-only SYN probe",
+                            ],
                             profile="tcp-port-discovery",
                         )
                     )
@@ -85,7 +113,10 @@ class ReconPlanner:
                             tool="rustscan",
                             purpose="Fast multi-threaded port discovery",
                             command_template=f"rustscan -a {target.host} --top",
-                            safety_constraints=["Adaptive timeout", "Safe non-intrusive probe"],
+                            safety_constraints=[
+                                "Adaptive timeout",
+                                "Safe non-intrusive probe",
+                            ],
                             profile="fast-port-discovery",
                         )
                     )
@@ -93,14 +124,21 @@ class ReconPlanner:
 
                 elif req_lower == "whatweb":
                     capabilities.append("web_fingerprinting")
-                    url_val = target.normalized_value if target.type == TargetType.URL else f"http://{target.host}"
+                    url_val = (
+                        target.normalized_value
+                        if target.type == TargetType.URL
+                        else f"http://{target.host}"
+                    )
                     steps.append(
                         ReconStep(
                             step_number=step_idx,
                             tool="whatweb",
                             purpose="Web server and CMS technology fingerprinting",
                             command_template=f"whatweb -a 1 {url_val}",
-                            safety_constraints=["Standard HTTP GET", "No active exploit"],
+                            safety_constraints=[
+                                "Standard HTTP GET",
+                                "No active exploit",
+                            ],
                             profile="technology-fingerprint",
                         )
                     )
@@ -108,7 +146,11 @@ class ReconPlanner:
 
                 elif req_lower == "nikto":
                     capabilities.append("web_security_audit")
-                    url_val = target.normalized_value if target.type == TargetType.URL else f"http://{target.host}"
+                    url_val = (
+                        target.normalized_value
+                        if target.type == TargetType.URL
+                        else f"http://{target.host}"
+                    )
                     steps.append(
                         ReconStep(
                             step_number=step_idx,
@@ -123,14 +165,21 @@ class ReconPlanner:
 
                 elif req_lower == "gobuster":
                     capabilities.append("directory_discovery")
-                    url_val = target.normalized_value if target.type == TargetType.URL else f"http://{target.host}"
+                    url_val = (
+                        target.normalized_value
+                        if target.type == TargetType.URL
+                        else f"http://{target.host}"
+                    )
                     steps.append(
                         ReconStep(
                             step_number=step_idx,
                             tool="gobuster",
                             purpose="Directory and file path enumeration",
                             command_template=f"gobuster dir -u {url_val} -w common.txt",
-                            safety_constraints=["Standard wordlist only", "Rate-limited"],
+                            safety_constraints=[
+                                "Standard wordlist only",
+                                "Rate-limited",
+                            ],
                             profile="directory-discovery",
                         )
                     )
@@ -138,14 +187,21 @@ class ReconPlanner:
 
                 elif req_lower == "ffuf":
                     capabilities.append("content_discovery")
-                    url_val = target.normalized_value if target.type == TargetType.URL else f"http://{target.host}"
+                    url_val = (
+                        target.normalized_value
+                        if target.type == TargetType.URL
+                        else f"http://{target.host}"
+                    )
                     steps.append(
                         ReconStep(
                             step_number=step_idx,
                             tool="ffuf",
                             purpose="Fuzzing web endpoints and files",
                             command_template=f"ffuf -u {url_val}/FUZZ -w common.txt -rate 50",
-                            safety_constraints=["Rate-limited to 50 req/s", "No credential brute force"],
+                            safety_constraints=[
+                                "Rate-limited to 50 req/s",
+                                "No credential brute force",
+                            ],
                             profile="content-discovery",
                         )
                     )
@@ -153,14 +209,21 @@ class ReconPlanner:
 
                 elif req_lower == "katana":
                     capabilities.append("web_crawling")
-                    url_val = target.normalized_value if target.type == TargetType.URL else f"http://{target.host}"
+                    url_val = (
+                        target.normalized_value
+                        if target.type == TargetType.URL
+                        else f"http://{target.host}"
+                    )
                     steps.append(
                         ReconStep(
                             step_number=step_idx,
                             tool="katana",
                             purpose="Spidering and crawling web endpoints",
                             command_template=f"katana -u {url_val} -depth 2",
-                            safety_constraints=["Depth limited to 2", "Passive URL extraction"],
+                            safety_constraints=[
+                                "Depth limited to 2",
+                                "Passive URL extraction",
+                            ],
                             profile="crawl",
                         )
                     )
@@ -173,8 +236,11 @@ class ReconPlanner:
                             step_number=step_idx,
                             tool="searchsploit",
                             purpose="Lookup potential exploit references for detected software version",
-                            command_template=f"searchsploit --json \"{target.host}\"",
-                            safety_constraints=["Offline database lookup", "No automated exploitation"],
+                            command_template=f'searchsploit --json "{target.host}"',
+                            safety_constraints=[
+                                "Offline database lookup",
+                                "No automated exploitation",
+                            ],
                             profile="vulnerability-reference-search",
                         )
                     )
@@ -182,15 +248,165 @@ class ReconPlanner:
 
                 elif req_lower in ("burpsuite", "zap"):
                     capabilities.append("manual_proxy")
-                    url_val = target.normalized_value if target.type == TargetType.URL else f"http://{target.host}"
+                    url_val = (
+                        target.normalized_value
+                        if target.type == TargetType.URL
+                        else f"http://{target.host}"
+                    )
                     steps.append(
                         ReconStep(
                             step_number=step_idx,
                             tool=req_lower,
                             purpose=f"Setup {req_lower.upper()} manual security testing proxy workflow",
                             command_template=f"proxy-workflow --tool {req_lower} --target {url_val}",
-                            safety_constraints=["Manual workflow only", "User confirmation required"],
+                            safety_constraints=[
+                                "Manual workflow only",
+                                "User confirmation required",
+                            ],
                             profile="manual-workflow",
+                        )
+                    )
+                    step_idx += 1
+
+                elif req_lower == "naabu":
+                    capabilities.append("fast_port_discovery")
+                    steps.append(
+                        ReconStep(
+                            step_number=step_idx,
+                            tool="naabu",
+                            purpose="Fast TCP port discovery across top 100 ports",
+                            command_template=f"naabu -host {target.host} -top-ports 100",
+                            safety_constraints=["Syn/TCP connect probe only", "Rate-limited"],
+                            profile="fast-port-discovery",
+                        )
+                    )
+                    step_idx += 1
+
+                elif req_lower in ("nmap", "nmap-nse"):
+                    capabilities.extend(["port_discovery", "service_discovery"])
+                    port_cmd = f"-p {target.port}" if target.port else "--top-ports 100"
+                    steps.append(
+                        ReconStep(
+                            step_number=step_idx,
+                            tool="nmap",
+                            purpose="Service identification and version fingerprinting",
+                            command_template=f"nmap -sV -sC -Pn -T4 {port_cmd} {target.host}",
+                            safety_constraints=["Read-only", "No DoS"],
+                            profile="service-detection",
+                        )
+                    )
+                    step_idx += 1
+
+                elif req_lower == "httpx":
+                    capabilities.append("web_probing")
+                    url_val = target.normalized_value if target.type == TargetType.URL else f"http://{target.host}"
+                    steps.append(
+                        ReconStep(
+                            step_number=step_idx,
+                            tool="httpx",
+                            purpose="HTTP response headers, status code, title, and technology probing",
+                            command_template=f"httpx -u {url_val} -status-code -title -tech-detect",
+                            safety_constraints=["Non-destructive", "Standard HTTP GET"],
+                            profile="web-probe",
+                        )
+                    )
+                    step_idx += 1
+
+                elif req_lower == "nuclei":
+                    capabilities.append("vulnerability_detection")
+                    url_val = target.normalized_value if target.type == TargetType.URL else f"http://{target.host}"
+                    steps.append(
+                        ReconStep(
+                            step_number=step_idx,
+                            tool="nuclei",
+                            purpose="Template-based read-only CVE & misconfiguration assessment",
+                            command_template=f"nuclei -u {url_val} -tags cve,misconfig,exposure",
+                            safety_constraints=["Read-only audit templates", "No brute force"],
+                            profile="approved-vulnerability-scan",
+                        )
+                    )
+                    step_idx += 1
+
+                elif req_lower in ("smbclient", "enum4linux"):
+                    capabilities.extend(["smb", "service_enumeration"])
+                    steps.append(
+                        ReconStep(
+                            step_number=step_idx,
+                            tool=req_lower,
+                            purpose=f"SMB service enumeration using {req_lower}",
+                            command_template=f"{req_lower} against {target.host}",
+                            safety_constraints=["Standard query", "Read-only"],
+                            profile="smb-enumeration",
+                        )
+                    )
+                    step_idx += 1
+
+                elif req_lower == "snmpwalk":
+                    capabilities.extend(["snmp", "service_enumeration"])
+                    steps.append(
+                        ReconStep(
+                            step_number=step_idx,
+                            tool="snmpwalk",
+                            purpose="Query SNMP system information and OID tree",
+                            command_template=f"snmpwalk -v2c -c public {target.host}",
+                            safety_constraints=["Public community probe", "Read-only"],
+                            profile="snmp-discovery",
+                        )
+                    )
+                    step_idx += 1
+
+                elif req_lower == "ldapsearch":
+                    capabilities.extend(["ldap", "service_enumeration"])
+                    steps.append(
+                        ReconStep(
+                            step_number=step_idx,
+                            tool="ldapsearch",
+                            purpose="Query LDAP naming contexts and base tree",
+                            command_template=f'ldapsearch -x -H ldap://{target.host} -b ""',
+                            safety_constraints=["Anonymous bind", "Read-only"],
+                            profile="ldap-base-query",
+                        )
+                    )
+                    step_idx += 1
+
+                elif req_lower == "testssl":
+                    capabilities.extend(["ssl", "tls", "crypto_audit"])
+                    steps.append(
+                        ReconStep(
+                            step_number=step_idx,
+                            tool="testssl",
+                            purpose="SSL/TLS cipher suite and vulnerability assessment",
+                            command_template=f"testssl --fast {target.host}",
+                            safety_constraints=["Standard TLS handshake", "Read-only"],
+                            profile="ssl-audit",
+                        )
+                    )
+                    step_idx += 1
+
+                elif req_lower == "theharvester":
+                    capabilities.extend(["osint", "subdomain_discovery"])
+                    steps.append(
+                        ReconStep(
+                            step_number=step_idx,
+                            tool="theharvester",
+                            purpose="Passive OSINT and subdomain reconnaissance",
+                            command_template=f"theHarvester -d {target.host} -b all",
+                            safety_constraints=["Passive query", "Rate-limited"],
+                            profile="osint-recon",
+                        )
+                    )
+                    step_idx += 1
+
+                elif req_lower == "database":
+                    capabilities.extend(["database", "service_enumeration"])
+                    steps.append(
+                        ReconStep(
+                            step_number=step_idx,
+                            tool="database",
+                            purpose="Database client banner query and connection probing",
+                            command_template=f"mysql --host={target.host} --connect-timeout=5",
+                            safety_constraints=["Banner query only", "Read-only"],
+                            profile="database-enum",
                         )
                     )
                     step_idx += 1
@@ -199,7 +415,7 @@ class ReconPlanner:
         if not steps:
             if is_web:
                 port_val = target.port or (443 if target.scheme == "https" else 80)
-                
+
                 # Step 1: Nmap service version
                 steps.append(
                     ReconStep(
@@ -220,7 +436,10 @@ class ReconPlanner:
                         tool="httpx",
                         purpose="HTTP response headers, status code, title, and technology probing",
                         command_template=f"httpx -u {target.normalized_value} -status-code -title -tech-detect",
-                        safety_constraints=["Non-destructive", "Standard HTTP GET requests"],
+                        safety_constraints=[
+                            "Non-destructive",
+                            "Standard HTTP GET requests",
+                        ],
                         profile="web-probe",
                     )
                 )
@@ -233,7 +452,11 @@ class ReconPlanner:
                         tool="nuclei",
                         purpose="Template-based read-only CVE & misconfiguration assessment",
                         command_template=f"nuclei -u {target.normalized_value} -tags cve,misconfig,exposure",
-                        safety_constraints=["Read-only audit templates", "No brute force", "No automated exploitation"],
+                        safety_constraints=[
+                            "Read-only audit templates",
+                            "No brute force",
+                            "No automated exploitation",
+                        ],
                         profile="approved-vulnerability-scan",
                     )
                 )
@@ -252,7 +475,12 @@ class ReconPlanner:
                 )
                 step_idx += 1
 
-            elif target.type in (TargetType.IPV4, TargetType.IPV6, TargetType.DOMAIN, TargetType.HOSTNAME):
+            elif target.type in (
+                TargetType.IPV4,
+                TargetType.IPV6,
+                TargetType.DOMAIN,
+                TargetType.HOSTNAME,
+            ):
                 # Step 1: Naabu fast port discovery
                 steps.append(
                     ReconStep(
@@ -260,7 +488,10 @@ class ReconPlanner:
                         tool="naabu",
                         purpose="Fast TCP port discovery across top 100 ports",
                         command_template=f"naabu -host {target.host} -top-ports 100",
-                        safety_constraints=["Syn/TCP connect probe only", "Rate-limited"],
+                        safety_constraints=[
+                            "Syn/TCP connect probe only",
+                            "Rate-limited",
+                        ],
                         profile="fast-port-discovery",
                     )
                 )
@@ -300,8 +531,55 @@ class ReconPlanner:
                 product = str(s.get("product") or "")
                 version = str(s.get("version") or "")
 
+                # Web Services (80, 443, 3000, 5000, 8000, 8080, 8443 or 'http' in name)
+                if port in (80, 443, 3000, 5000, 8000, 8080, 8443) or any(
+                    w in name for w in ["http", "https", "web", "ssl/http"]
+                ):
+                    proto = "https" if (port == 443 or "https" in name or "ssl" in name) else "http"
+                    web_url = f"{proto}://{target.host}:{port}" if port not in (80, 443) else f"{proto}://{target.host}"
+                    capabilities.extend(["web", "web_probing", "vulnerability_detection"])
+
+                    if not any(st.tool == "httpx" for st in steps):
+                        steps.append(
+                            ReconStep(
+                                step_number=step_idx,
+                                tool="httpx",
+                                purpose=f"Probe HTTP service headers, title and tech on port {port}",
+                                command_template=f"httpx -u {web_url} -status-code -title -tech-detect",
+                                safety_constraints=["Non-destructive", "Standard HTTP GET"],
+                                profile="web-probe",
+                            )
+                        )
+                        step_idx += 1
+
+                    if not any(st.tool == "whatweb" for st in steps):
+                        steps.append(
+                            ReconStep(
+                                step_number=step_idx,
+                                tool="whatweb",
+                                purpose=f"Fingerprint web framework and server on port {port}",
+                                command_template=f"whatweb -a 1 {web_url}",
+                                safety_constraints=["Standard HTTP GET", "Read-only"],
+                                profile="web-fingerprint",
+                            )
+                        )
+                        step_idx += 1
+
+                    if not any(st.tool == "nuclei" for st in steps):
+                        steps.append(
+                            ReconStep(
+                                step_number=step_idx,
+                                tool="nuclei",
+                                purpose=f"Run read-only vulnerability templates on port {port}",
+                                command_template=f"nuclei -u {web_url} -tags cve,misconfig,exposure",
+                                safety_constraints=["Read-only audit templates", "No brute force"],
+                                profile="approved-vulnerability-scan",
+                            )
+                        )
+                        step_idx += 1
+
                 # SMB Enumeration (445, 139)
-                if port in (445, 139) or "smb" in name or "microsoft-ds" in name:
+                elif port in (445, 139) or "smb" in name or "microsoft-ds" in name:
                     capabilities.extend(["smb", "service_enumeration"])
                     steps.append(
                         ReconStep(
@@ -309,7 +587,10 @@ class ReconPlanner:
                             tool="enum4linux",
                             purpose=f"SMB null session, user and share enumeration on port {port}",
                             command_template=f"enum4linux -a {target.host}",
-                            safety_constraints=["Standard RPC/SMB query", "No password cracking"],
+                            safety_constraints=[
+                                "Standard RPC/SMB query",
+                                "No password cracking",
+                            ],
                             profile="smb-enumeration",
                         )
                     )
@@ -350,7 +631,7 @@ class ReconPlanner:
                             step_number=step_idx,
                             tool="ldapsearch",
                             purpose=f"Query LDAP naming contexts and base tree on port {port}",
-                            command_template=f"ldapsearch -x -H ldap://{target.host}:{port} -b \"\"",
+                            command_template=f'ldapsearch -x -H ldap://{target.host}:{port} -b ""',
                             safety_constraints=["Anonymous bind", "Read-only"],
                             profile="ldap-base-query",
                         )
@@ -358,16 +639,30 @@ class ReconPlanner:
                     step_idx += 1
 
                 # Database Services
-                elif port in (3306, 5432, 6379, 27017, 1433) or any(db in name for db in ["mysql", "postgres", "redis", "mongodb", "ms-sql"]):
+                elif port in (3306, 5432, 6379, 27017, 1433) or any(
+                    db in name
+                    for db in ["mysql", "postgres", "redis", "mongodb", "ms-sql"]
+                ):
                     capabilities.extend(["database", "service_enumeration"])
-                    db_type = "mysql" if port == 3306 else ("psql" if port == 5432 else ("redis-cli" if port == 6379 else "mongosh"))
+                    db_type = (
+                        "mysql"
+                        if port == 3306
+                        else (
+                            "psql"
+                            if port == 5432
+                            else ("redis-cli" if port == 6379 else "mongosh")
+                        )
+                    )
                     steps.append(
                         ReconStep(
                             step_number=step_idx,
                             tool="database",
                             purpose=f"Probe database banner and connectivity for {db_type.upper()} on port {port}",
                             command_template=f"{db_type} connection check on {target.host}:{port}",
-                            safety_constraints=["Connection probe only", "No unauthorized data query"],
+                            safety_constraints=[
+                                "Connection probe only",
+                                "No unauthorized data query",
+                            ],
                             profile="db-probe",
                         )
                     )
@@ -381,8 +676,11 @@ class ReconPlanner:
                             step_number=step_idx,
                             tool="searchsploit",
                             purpose=f"Query exploit references for detected product '{product} {version}'",
-                            command_template=f"searchsploit --json \"{product} {version}\"",
-                            safety_constraints=["Offline lookup only", "No exploit execution"],
+                            command_template=f'searchsploit --json "{product} {version}"',
+                            safety_constraints=[
+                                "Offline lookup only",
+                                "No exploit execution",
+                            ],
                             profile="vulnerability-reference-search",
                         )
                     )
@@ -400,13 +698,29 @@ class ReconPlanner:
         )
 
     @classmethod
-    def plan_service_enumeration(cls, target: Target, services: List[Dict[str, Any]]) -> List[ReconStep]:
+    def plan_service_enumeration(
+        cls, target: Target, services: list[dict[str, Any]]
+    ) -> list[ReconStep]:
         """Convenience method to generate service-specific enumeration steps."""
         full_plan = cls.plan(target, detected_services=services)
-        return [s for s in full_plan.steps if s.profile in ("smb-enumeration", "share-listing", "snmp-discovery", "ldap-base-query", "db-probe", "vulnerability-reference-search")]
+        return [
+            s
+            for s in full_plan.steps
+            if s.profile
+            in (
+                "smb-enumeration",
+                "share-listing",
+                "snmp-discovery",
+                "ldap-base-query",
+                "db-probe",
+                "vulnerability-reference-search",
+            )
+        ]
 
     @classmethod
-    def plan_fast_port_discovery(cls, target: Target, tool: str = "masscan") -> ReconStep:
+    def plan_fast_port_discovery(
+        cls, target: Target, tool: str = "masscan"
+    ) -> ReconStep:
         """Generate a fast port discovery step using masscan or rustscan."""
         if tool == "rustscan":
             return ReconStep(

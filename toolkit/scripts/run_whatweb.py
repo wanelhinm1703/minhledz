@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
 import os
 import pathlib
@@ -10,12 +9,14 @@ import shutil
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from toolkit.scripts.run_nmap import append_command_log
+from toolkit.scripts.scan_status import create_scan_status, save_scan_status
 
 
 def generate_mock_whatweb_json(target_url: str) -> str:
@@ -23,13 +24,14 @@ def generate_mock_whatweb_json(target_url: str) -> str:
         {
             "target": target_url,
             "http_status": 200,
+            "request_config": {"headers": {}},
             "plugins": {
-                "Apache": {"version": ["2.4.49"]},
+                "Apache": {"version": ["2.4.49"], "string": ["Unix"]},
                 "HTTPServer": {"string": ["Apache/2.4.49 (Unix)"]},
                 "PHP": {"version": ["7.4.21"]},
                 "Title": {"string": ["Test Target Service"]},
-                "X-Powered-By": {"string": ["PHP/7.4.21"]}
-            }
+                "IP": {"string": ["192.168.1.10"]},
+            },
         }
     ]
     return json.dumps(mock_data, indent=2)
@@ -48,43 +50,114 @@ def run_whatweb_scan(
         scan_dir = output_dir
 
     raw_dir = scan_dir / "raw"
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    raw_json_path = raw_dir / "whatweb_raw.json"
+    simulated_dir = scan_dir / "simulated"
     commands_log = scan_dir / "commands.md"
-
-    cmd_args = f"-a 1 --log-json {raw_json_path} {target_url}"
-    command_str = f"whatweb {cmd_args}"
 
     whatweb_bin = shutil.which("whatweb")
     force_sim = simulate or (os.getenv("SIMULATE_SCANS", "false").lower() == "true")
 
+    started_at = datetime.now(timezone.utc).isoformat()
     start_time = time.time()
     exit_code = 0
     error_msg = None
+    reason = None
+    warnings = []
+    errors = []
+    mode = "real"
+    actual_file_path: pathlib.Path | None = None
+    rel_raw_path: str | None = None
+    finding_count = 0
 
     if whatweb_bin and not force_sim:
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        raw_json_path = raw_dir / "whatweb_raw.json"
+        actual_file_path = raw_json_path
+        rel_raw_path = "raw/whatweb_raw.json"
+        cmd_args = f"-a 1 --log-json {raw_json_path} {target_url}"
+        command_str = f"whatweb {cmd_args}"
+
         try:
             cmd = [
                 whatweb_bin,
-                "-a", "1",
+                "-a",
+                "1",
                 f"--log-json={raw_json_path}",
                 target_url,
             ]
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
             exit_code = res.returncode
             if exit_code != 0:
-                error_msg = res.stderr
+                mode = "failed"
+                error_msg = res.stderr or f"Exit code {exit_code}"
+                errors.append(error_msg)
+                reason = "execution_error"
+            else:
+                mode = "real"
+                if raw_json_path.exists():
+                    try:
+                        data = json.loads(raw_json_path.read_text(encoding="utf-8"))
+                        finding_count = len(data) if isinstance(data, list) else 1
+                    except Exception:
+                        pass
+        except subprocess.TimeoutExpired:
+            mode = "failed"
+            exit_code = 124
+            reason = "timeout"
+            error_msg = "WhatWeb scan timed out after 120 seconds."
+            errors.append(error_msg)
         except Exception as e:
+            mode = "failed"
             exit_code = 1
+            reason = "execution_error"
             error_msg = str(e)
+            errors.append(error_msg)
     elif force_sim:
-        raw_json_path.write_text(generate_mock_whatweb_json(target_url), encoding="utf-8")
+        simulated_dir.mkdir(parents=True, exist_ok=True)
+        sim_json_path = simulated_dir / "whatweb_raw.json"
+        sim_json_path.write_text(
+            generate_mock_whatweb_json(target_url), encoding="utf-8"
+        )
+        actual_file_path = sim_json_path
+        rel_raw_path = "simulated/whatweb_raw.json"
+        mode = "simulated"
+        reason = "binary_not_found" if not whatweb_bin else None
+        exit_code = 0
+        finding_count = 1
+        warnings.append("Simulated scan results. Not genuine evidence.")
+        cmd_args = f"-a 1 {target_url} [SIMULATED]"
+        command_str = f"whatweb {cmd_args}"
     else:
+        mode = "failed"
+        reason = "binary_not_found"
         exit_code = 127
-        error_msg = "WhatWeb binary is not installed in the current environment. Please install whatweb or use HTTPx tech-detect fallback."
-        raw_json_path.write_text("[]", encoding="utf-8")
+        error_msg = "WhatWeb binary is not installed in the current environment. Please install whatweb or use HTTPx."
+        errors.append(error_msg)
+        actual_file_path = None
+        rel_raw_path = None
+        cmd_args = f"-a 1 {target_url} [BINARY NOT FOUND]"
+        command_str = f"whatweb {cmd_args}"
 
     duration = time.time() - start_time
+    finished_at = datetime.now(timezone.utc).isoformat()
+
+    status = create_scan_status(
+        tool="whatweb",
+        target_id=target_id,
+        target_url=target_url,
+        started_at=started_at,
+        finished_at=finished_at,
+        duration_sec=duration,
+        mode=mode,
+        exit_code=exit_code,
+        binary_available=bool(whatweb_bin),
+        reason=reason,
+        raw_file_path=actual_file_path,
+        finding_count=finding_count,
+        warnings=warnings,
+        errors=errors,
+        relative_raw_path=rel_raw_path,
+    )
+    save_scan_status(scan_dir, status)
 
     append_command_log(
         log_path=commands_log,
@@ -94,7 +167,7 @@ def run_whatweb_scan(
         arguments=cmd_args,
         exit_code=exit_code,
         duration=duration,
-        output_path=str(raw_json_path),
+        output_path=str(actual_file_path) if actual_file_path else "None",
         error=error_msg,
     )
 
@@ -104,9 +177,10 @@ def run_whatweb_scan(
         "arguments": cmd_args,
         "exit_code": exit_code,
         "duration": duration,
-        "raw_path": str(raw_json_path),
+        "raw_path": str(actual_file_path) if actual_file_path else "",
         "commands_log": str(commands_log),
         "error": error_msg,
+        "status": status.model_dump(),
     }
 
 
@@ -114,7 +188,9 @@ def main():
     parser = argparse.ArgumentParser(description="AI-Pentest Copilot WhatWeb Runner")
     parser.add_argument("--target-id", default="target-web", help="Target ID")
     parser.add_argument("--url", required=True, help="Target URL")
-    parser.add_argument("--simulate", action="store_true", help="Force test fixture simulation")
+    parser.add_argument(
+        "--simulate", action="store_true", help="Force test fixture simulation"
+    )
     args = parser.parse_args()
 
     res = run_whatweb_scan(
@@ -122,7 +198,9 @@ def main():
         target_url=args.url,
         simulate=args.simulate,
     )
-    print(f"WhatWeb finished in {res['duration']:.2f}s with exit code {res['exit_code']}")
+    print(
+        f"WhatWeb finished in {res['duration']:.2f}s with exit code {res['exit_code']} (mode: {res['status']['mode']})"
+    )
     print(f"Raw Evidence: {res['raw_path']}")
 
 

@@ -1,0 +1,36 @@
+tool_id: smbclient
+name: smbclient
+category: service_enum
+binary: smbclient
+version_command:
+- --version
+docker:
+  image: ai-pentest-tools:latest
+  binary: smbclient
+target_types:
+- ipv4
+- domain
+- hostname
+capabilities:
+- smb_share_listing
+- null_session_check
+input_types:
+- ip
+- hostname
+output_formats:
+- raw
+- json
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_service_enum.py
+evidence_directory: toolkit/06-service-enum/scans
+enabled: true
+tags:
+- service-enum
+- smb
+- samba
+- shares
+safe_flags:
+- -N
+- -L
+binary_lookup_paths: []

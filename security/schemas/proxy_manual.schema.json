@@ -3,21 +3,11 @@
   "title": "ProxyManualResult",
   "description": "Schema for structured Proxy and Manual Pentest Workflow artifacts (Burp Suite, OWASP ZAP)",
   "type": "object",
-  "required": [
-    "scan_metadata",
-    "tool",
-    "target",
-    "proxy_endpoint",
-    "status"
-  ],
+  "required": ["scan_metadata", "tool", "target", "proxy_endpoint", "status"],
   "properties": {
     "scan_metadata": {
       "type": "object",
-      "required": [
-        "tool",
-        "target",
-        "timestamp"
-      ],
+      "required": ["tool", "target", "timestamp"],
       "properties": {
         "tool": {
           "type": "string"

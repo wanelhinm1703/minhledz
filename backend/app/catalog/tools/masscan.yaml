@@ -1,0 +1,38 @@
+tool_id: masscan
+name: Masscan
+category: network
+binary: masscan
+version_command:
+- --version
+docker:
+  image: ai-pentest-tools:latest
+  binary: masscan
+target_types:
+- ipv4
+- cidr
+- ipv6
+capabilities:
+- fast_port_discovery
+- large_scale_scan
+input_types:
+- ip
+- cidr
+output_formats:
+- json
+- raw
+risk_level: controlled
+requires_user_confirmation: true
+parser: parse_masscan.py
+evidence_directory: toolkit/03-network/scans
+enabled: true
+tags:
+- network
+- port-scan
+- syn-scan
+- fast
+safe_flags:
+- --rate
+- '1000'
+binary_lookup_paths:
+- C:\masscan\masscan.exe
+- C:\ProgramData\chocolatey\bin\masscan.exe

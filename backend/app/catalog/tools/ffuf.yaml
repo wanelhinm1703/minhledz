@@ -1,0 +1,35 @@
+tool_id: ffuf
+name: FFUF
+category: web
+binary: ffuf
+version_command:
+- -V
+docker:
+  image: ai-pentest-tools:latest
+  binary: ffuf
+target_types:
+- url
+- host_port
+capabilities:
+- content_discovery
+- path_fuzzing
+- parameter_discovery
+input_types:
+- url
+output_formats:
+- json
+- raw
+risk_level: controlled
+requires_user_confirmation: true
+parser: parse_ffuf.py
+evidence_directory: toolkit/04-web/scans
+enabled: true
+tags:
+- web
+- fuzzing
+- content-discovery
+- fast
+safe_flags:
+- -rate
+- '50'
+binary_lookup_paths: []

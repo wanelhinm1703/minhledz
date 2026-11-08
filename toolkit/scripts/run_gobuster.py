@@ -2,35 +2,51 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
-import json
 import os
 import pathlib
 import shutil
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from toolkit.scripts.run_nmap import append_command_log
+from toolkit.scripts.scan_status import create_scan_status, save_scan_status
 
 
 def generate_mock_gobuster_output() -> str:
-    return """/login                (Status: 200) [Size: 1420]
-/admin                (Status: 403) [Size: 284]
-/robots.txt           (Status: 200) [Size: 64]
-/api                  (Status: 301) [Size: 0] [--> /api/]
+    return """===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://target.local
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                common.txt
+[+] Negative Status codes:   404
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/login                (Status: 200) [Size: 1542]
+/admin                (Status: 301) [Size: 178] [--> /admin/]
+/robots.txt           (Status: 200) [Size: 45]
+/api                  (Status: 200) [Size: 245]
+/static               (Status: 301) [Size: 180] [--> /static/]
+===============================================================
+Finished
+===============================================================
 """
 
 
 def run_gobuster_scan(
     target_id: str,
     target_url: str,
-    wordlist: str | None = None,
     mode: str = "dir",
+    wordlist: str | None = None,
     output_dir: pathlib.Path | None = None,
     simulate: bool = False,
 ) -> dict:
@@ -41,53 +57,129 @@ def run_gobuster_scan(
         scan_dir = output_dir
 
     raw_dir = scan_dir / "raw"
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    raw_txt_path = raw_dir / "gobuster_raw.txt"
+    simulated_dir = scan_dir / "simulated"
     commands_log = scan_dir / "commands.md"
 
     # Default fallback small wordlist if none provided
     wl_path = wordlist or str(root / "toolkit" / "00-meta" / "templates" / "common.txt")
     if not os.path.exists(wl_path):
-        # Create a basic safe fallback wordlist
-        temp_wl = raw_dir / "temp_wordlist.txt"
-        temp_wl.write_text("login\nadmin\nrobots.txt\napi\nimages\nstatic\n", encoding="utf-8")
+        temp_wl = scan_dir / "temp_wordlist.txt"
+        temp_wl.parent.mkdir(parents=True, exist_ok=True)
+        temp_wl.write_text(
+            "login\nadmin\nrobots.txt\napi\nimages\nstatic\n", encoding="utf-8"
+        )
         wl_path = str(temp_wl)
-
-    cmd_args = f"{mode} -u {target_url} -w {wl_path} -o {raw_txt_path} --no-error"
-    command_str = f"gobuster {cmd_args}"
 
     gobuster_bin = shutil.which("gobuster")
     force_sim = simulate or (os.getenv("SIMULATE_SCANS", "false").lower() == "true")
 
+    started_at = datetime.now(timezone.utc).isoformat()
     start_time = time.time()
     exit_code = 0
     error_msg = None
+    reason = None
+    warnings = []
+    errors = []
+    actual_mode = "real"
+    actual_file_path: pathlib.Path | None = None
+    rel_raw_path: str | None = None
+    finding_count = 0
 
     if gobuster_bin and not force_sim:
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        raw_txt_path = raw_dir / "gobuster_raw.txt"
+        actual_file_path = raw_txt_path
+        rel_raw_path = "raw/gobuster_raw.txt"
+        cmd_args = f"{mode} -u {target_url} -w {wl_path} -o {raw_txt_path} --no-error"
+        command_str = f"gobuster {cmd_args}"
+
         try:
             cmd = [
                 gobuster_bin,
                 mode,
-                "-u", target_url,
-                "-w", wl_path,
-                "-o", str(raw_txt_path),
+                "-u",
+                target_url,
+                "-w",
+                wl_path,
+                "-o",
+                str(raw_txt_path),
                 "--no-error",
             ]
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
             exit_code = res.returncode
             if exit_code != 0:
-                error_msg = res.stderr
+                actual_mode = "failed"
+                error_msg = res.stderr or f"Exit code {exit_code}"
+                errors.append(error_msg)
+                reason = "execution_error"
+            else:
+                actual_mode = "real"
+                if raw_txt_path.exists():
+                    lines = [
+                        l
+                        for l in raw_txt_path.read_text(
+                            encoding="utf-8", errors="replace"
+                        ).splitlines()
+                        if "(Status:" in l
+                    ]
+                    finding_count = len(lines)
+        except subprocess.TimeoutExpired:
+            actual_mode = "failed"
+            exit_code = 124
+            reason = "timeout"
+            error_msg = "Gobuster scan timed out after 120 seconds."
+            errors.append(error_msg)
         except Exception as e:
+            actual_mode = "failed"
             exit_code = 1
+            reason = "execution_error"
             error_msg = str(e)
+            errors.append(error_msg)
     elif force_sim:
-        raw_txt_path.write_text(generate_mock_gobuster_output(), encoding="utf-8")
+        simulated_dir.mkdir(parents=True, exist_ok=True)
+        sim_txt_path = simulated_dir / "gobuster_raw.txt"
+        sim_txt_path.write_text(generate_mock_gobuster_output(), encoding="utf-8")
+        actual_file_path = sim_txt_path
+        rel_raw_path = "simulated/gobuster_raw.txt"
+        actual_mode = "simulated"
+        reason = "binary_not_found" if not gobuster_bin else None
+        exit_code = 0
+        finding_count = 5
+        warnings.append("Simulated scan results. Not genuine evidence.")
+        cmd_args = f"{mode} -u {target_url} -w {wl_path} [SIMULATED]"
+        command_str = f"gobuster {cmd_args}"
     else:
+        actual_mode = "failed"
+        reason = "binary_not_found"
         exit_code = 127
         error_msg = "Gobuster binary is not installed in the current environment. Please install gobuster or use Katana/FFUF."
-        raw_txt_path.write_text(error_msg, encoding="utf-8")
+        errors.append(error_msg)
+        actual_file_path = None
+        rel_raw_path = None
+        cmd_args = f"{mode} -u {target_url} [BINARY NOT FOUND]"
+        command_str = f"gobuster {cmd_args}"
 
     duration = time.time() - start_time
+    finished_at = datetime.now(timezone.utc).isoformat()
+
+    status = create_scan_status(
+        tool="gobuster",
+        target_id=target_id,
+        target_url=target_url,
+        started_at=started_at,
+        finished_at=finished_at,
+        duration_sec=duration,
+        mode=actual_mode,
+        exit_code=exit_code,
+        binary_available=bool(gobuster_bin),
+        reason=reason,
+        raw_file_path=actual_file_path,
+        finding_count=finding_count,
+        warnings=warnings,
+        errors=errors,
+        relative_raw_path=rel_raw_path,
+    )
+    save_scan_status(scan_dir, status)
 
     append_command_log(
         log_path=commands_log,
@@ -97,7 +189,7 @@ def run_gobuster_scan(
         arguments=cmd_args,
         exit_code=exit_code,
         duration=duration,
-        output_path=str(raw_txt_path),
+        output_path=str(actual_file_path) if actual_file_path else "None",
         error=error_msg,
     )
 
@@ -107,9 +199,10 @@ def run_gobuster_scan(
         "arguments": cmd_args,
         "exit_code": exit_code,
         "duration": duration,
-        "raw_path": str(raw_txt_path),
+        "raw_path": str(actual_file_path) if actual_file_path else "",
         "commands_log": str(commands_log),
         "error": error_msg,
+        "status": status.model_dump(),
     }
 
 
@@ -119,17 +212,21 @@ def main():
     parser.add_argument("--url", required=True, help="Target URL")
     parser.add_argument("--mode", default="dir", help="Gobuster mode (dir, dns)")
     parser.add_argument("--wordlist", default=None, help="Wordlist path")
-    parser.add_argument("--simulate", action="store_true", help="Force test simulation")
+    parser.add_argument(
+        "--simulate", action="store_true", help="Force test fixture simulation"
+    )
     args = parser.parse_args()
 
     res = run_gobuster_scan(
         target_id=args.target_id,
         target_url=args.url,
-        wordlist=args.wordlist,
         mode=args.mode,
+        wordlist=args.wordlist,
         simulate=args.simulate,
     )
-    print(f"Gobuster finished in {res['duration']:.2f}s with exit code {res['exit_code']}")
+    print(
+        f"Gobuster finished in {res['duration']:.2f}s with exit code {res['exit_code']} (mode: {res['status']['mode']})"
+    )
     print(f"Raw Evidence: {res['raw_path']}")
 
 

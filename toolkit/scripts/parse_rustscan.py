@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
 import pathlib
 import re
-import sys
+from datetime import datetime, timezone
+
 import jsonschema
 
 
@@ -40,7 +40,9 @@ class RustscanParser:
             open_ports.add(int(match.group(1)))
 
         # Match pattern: The ports [...] are open! or [80, 443]
-        for match in re.finditer(r"ports\s+([0-9, ]+)\s+are\s+open", content, re.IGNORECASE):
+        for match in re.finditer(
+            r"ports\s+([0-9, ]+)\s+are\s+open", content, re.IGNORECASE
+        ):
             port_items = match.group(1).split(",")
             for item in port_items:
                 clean_p = item.strip()
@@ -63,9 +65,13 @@ class RustscanParser:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Parse RustScan output to Structured JSON")
+    parser = argparse.ArgumentParser(
+        description="Parse RustScan output to Structured JSON"
+    )
     parser.add_argument("--input", required=True, help="Path to raw rustscan_raw.txt")
-    parser.add_argument("--output", required=True, help="Path to output structured json")
+    parser.add_argument(
+        "--output", required=True, help="Path to output structured json"
+    )
     parser.add_argument("--schema", help="Path to rustscan_result.schema.json")
     args = parser.parse_args()
 

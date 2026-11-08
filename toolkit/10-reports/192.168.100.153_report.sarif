@@ -1,0 +1,106 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "AI-Pentest Copilot",
+          "semanticVersion": "5.0.0",
+          "informationUri": "https://github.com/ai-pentest-copilot",
+          "rules": [
+            {
+              "id": "CVE-2021-41773",
+              "name": "Apache_HTTP_Server_Path_Traversal",
+              "shortDescription": {
+                "text": "Apache HTTP Server Path Traversal"
+              },
+              "fullDescription": {
+                "text": "Path traversal in Apache 2.4.49"
+              },
+              "helpUri": "https://nvd.nist.gov/vuln/detail/CVE-2021-41773",
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "pentest-finding",
+                  "cvss-high",
+                  "owasp-a01:2021"
+                ],
+                "security-severity": "7.5",
+                "cwe": [],
+                "owasp": "A01:2021",
+                "nist_sp_800_115": "NIST SP 800-115 \u00a74.3",
+                "cis_control": "CIS Control 4.1"
+              }
+            }
+          ]
+        }
+      },
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "endTimeUtc": "2026-09-19T23:44:43Z"
+        }
+      ],
+      "results": [
+        {
+          "ruleId": "CVE-2021-41773",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Apache HTTP Server Path Traversal\n\nAffected Asset: 192.168.100.153:80\nCVSS Score: 7.5 (HIGH)\n\nPath traversal in Apache 2.4.49"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "target://192.168.100.153:80",
+                  "uriBaseId": "%SRCROOT%"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "name": "192.168.100.153:80",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "target_id": "192.168.100.153",
+            "cvssScore": 7.5,
+            "cvssSeverity": "HIGH",
+            "remediation": null,
+            "trustworthy": true,
+            "is_simulated": false,
+            "compliance": {
+              "cwe_id": "",
+              "cve_id": "CVE-2021-41773",
+              "owasp": {
+                "id": "A01:2021",
+                "name": "Broken Access Control",
+                "desc": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"
+              },
+              "cwe_top_25": {
+                "is_top_25": false,
+                "rank": null,
+                "details": null
+              },
+              "nist_sp_800_115": {
+                "section": "NIST SP 800-115 \u00a74.3",
+                "title": "Vulnerability Identification and Verification"
+              },
+              "cis_controls": {
+                "control": "CIS Control 4.1",
+                "title": "Establish and Maintain a Secure Configuration Process"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

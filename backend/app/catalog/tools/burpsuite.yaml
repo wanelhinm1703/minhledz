@@ -1,0 +1,37 @@
+tool_id: burpsuite
+name: Burp Suite
+category: proxy_manual
+binary: burpsuite
+version_command:
+- --help
+docker: null
+target_types:
+- url
+- host_port
+capabilities:
+- traffic_interception
+- controlled_manual_testing
+- session_recording
+input_types:
+- url
+output_formats:
+- xml
+- json
+risk_level: manual
+requires_user_confirmation: true
+parser: parse_manual_proxy.py
+evidence_directory: toolkit/08-manual/scans
+enabled: true
+tags:
+- proxy
+- manual
+- burp
+- gui
+safe_flags: []
+binary_lookup_paths:
+- /usr/local/bin/BurpSuiteCommunity
+- /usr/bin/burpsuite
+- /usr/bin/BurpSuiteCommunity
+- /opt/BurpSuiteCommunity/BurpSuiteCommunity
+- C:\Program Files\BurpSuiteCommunity\BurpSuiteCommunity.exe
+- C:\Program Files\BurpSuitePro\BurpSuitePro.exe

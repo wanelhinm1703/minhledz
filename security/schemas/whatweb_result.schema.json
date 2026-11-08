@@ -3,20 +3,11 @@
   "title": "WhatWebResult",
   "description": "Schema for structured WhatWeb web fingerprinting results",
   "type": "object",
-  "required": [
-    "scan_metadata",
-    "targets"
-  ],
+  "required": ["scan_metadata", "targets"],
   "properties": {
     "scan_metadata": {
       "type": "object",
-      "required": [
-        "tool",
-        "target",
-        "command",
-        "timestamp",
-        "exit_code"
-      ],
+      "required": ["tool", "target", "command", "timestamp", "exit_code"],
       "properties": {
         "tool": {
           "type": "string"
@@ -45,10 +36,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "target",
-          "http_status"
-        ],
+        "required": ["target", "http_status"],
         "properties": {
           "target": {
             "type": "string"
@@ -98,9 +86,7 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": [
-                "name"
-              ],
+              "required": ["name"],
               "properties": {
                 "name": {
                   "type": "string"

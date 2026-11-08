@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import json
 import uuid
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from backend.app.core.guardrails import check_exploit_intent, format_guardrail_refusal
+
 from backend.app.core.context import context_engine
+from backend.app.core.guardrails import check_exploit_intent, format_guardrail_refusal
 from backend.app.services.llm import llm_service
 from backend.app.storage.chat_db import chat_db
 
@@ -35,6 +37,7 @@ async def chat_websocket(websocket: WebSocket):
             active_file = payload.get("active_file")
             active_file_content = payload.get("active_file_content")
             active_target = payload.get("active_target")
+            attachments = payload.get("attachments", [])
 
             conversation_id = payload.get("conversation_id")
             if not conversation_id:
@@ -56,6 +59,7 @@ async def chat_websocket(websocket: WebSocket):
                 active_target=active_target,
                 active_file=active_file,
                 target_id=target_id,
+                attachments=attachments,
             )
 
             # 2. Check Guardrails for Exploit Intent
@@ -64,13 +68,25 @@ async def chat_websocket(websocket: WebSocket):
                 refusal = format_guardrail_refusal(reason)
                 # Send empty sources
                 await websocket.send_text(
-                    json.dumps({"type": "sources", "data": [], "conversation_id": conversation_id})
+                    json.dumps(
+                        {
+                            "type": "sources",
+                            "data": [],
+                            "conversation_id": conversation_id,
+                        }
+                    )
                 )
                 # Stream refusal text
                 words = refusal.split(" ")
                 for w in words:
                     await websocket.send_text(
-                        json.dumps({"type": "chunk", "data": w + " ", "conversation_id": conversation_id})
+                        json.dumps(
+                            {
+                                "type": "chunk",
+                                "data": w + " ",
+                                "conversation_id": conversation_id,
+                            }
+                        )
                     )
                 # Save assistant message
                 chat_db.add_message(
@@ -81,16 +97,18 @@ async def chat_websocket(websocket: WebSocket):
                 )
                 # Send done
                 await websocket.send_text(
-                    json.dumps({
-                        "type": "done",
-                        "data": refusal,
-                        "confidence": 1.0,
-                        "conversation_id": conversation_id,
-                        "next_steps": [
-                            "Sử dụng safe read-only validation commands",
-                            "Tạo verification plan không phá hủy",
-                        ],
-                    })
+                    json.dumps(
+                        {
+                            "type": "done",
+                            "data": refusal,
+                            "confidence": 1.0,
+                            "conversation_id": conversation_id,
+                            "next_steps": [
+                                "Sử dụng safe read-only validation commands",
+                                "Tạo verification plan không phá hủy",
+                            ],
+                        }
+                    )
                 )
                 continue
 
@@ -101,15 +119,18 @@ async def chat_websocket(websocket: WebSocket):
                 active_file=active_file,
                 active_file_content=active_file_content,
                 conversation_id=conversation_id,
+                attachments=attachments,
             )
 
             # 4. Emit sources first
             await websocket.send_text(
-                json.dumps({
-                    "type": "sources",
-                    "data": ctx_data["sources"],
-                    "conversation_id": conversation_id,
-                })
+                json.dumps(
+                    {
+                        "type": "sources",
+                        "data": ctx_data["sources"],
+                        "conversation_id": conversation_id,
+                    }
+                )
             )
 
             # 5. Stream response chunks
@@ -120,11 +141,13 @@ async def chat_websocket(websocket: WebSocket):
             ):
                 accumulated_chunks.append(chunk)
                 await websocket.send_text(
-                    json.dumps({
-                        "type": "chunk",
-                        "data": chunk,
-                        "conversation_id": conversation_id,
-                    })
+                    json.dumps(
+                        {
+                            "type": "chunk",
+                            "data": chunk,
+                            "conversation_id": conversation_id,
+                        }
+                    )
                 )
 
             full_response = "".join(accumulated_chunks)
@@ -144,16 +167,20 @@ async def chat_websocket(websocket: WebSocket):
                 "Chạy kiểm tra xác nhận an toàn (safe read-only probe)",
             ]
             if ctx_data.get("correlations"):
-                next_steps.insert(0, f"Review CVE: {ctx_data['correlations'][0].get('cve_id')}")
+                next_steps.insert(
+                    0, f"Review CVE: {ctx_data['correlations'][0].get('cve_id')}"
+                )
 
             await websocket.send_text(
-                json.dumps({
-                    "type": "done",
-                    "data": full_response,
-                    "confidence": 0.95 if ctx_data.get("correlations") else 0.85,
-                    "conversation_id": conversation_id,
-                    "next_steps": next_steps,
-                })
+                json.dumps(
+                    {
+                        "type": "done",
+                        "data": full_response,
+                        "confidence": 0.95 if ctx_data.get("correlations") else 0.85,
+                        "conversation_id": conversation_id,
+                        "next_steps": next_steps,
+                    }
+                )
             )
 
     except WebSocketDisconnect:

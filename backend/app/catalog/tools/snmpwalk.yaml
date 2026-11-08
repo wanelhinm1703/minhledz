@@ -1,0 +1,36 @@
+tool_id: snmpwalk
+name: snmpwalk
+category: service_enum
+binary: snmpwalk
+version_command:
+- -V
+docker:
+  image: ai-pentest-tools:latest
+  binary: snmpwalk
+target_types:
+- ipv4
+- hostname
+capabilities:
+- snmp_oid_walk
+- system_info_query
+input_types:
+- ip
+- hostname
+output_formats:
+- raw
+- json
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_service_enum.py
+evidence_directory: toolkit/06-service-enum/scans
+enabled: true
+tags:
+- service-enum
+- snmp
+- network-device
+- oid
+safe_flags:
+- -v2c
+- -c
+- public
+binary_lookup_paths: []

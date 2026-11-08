@@ -45,35 +45,22 @@
       "type": "string"
     },
     "port": {
-      "type": [
-        "integer",
-        "null"
-      ],
+      "type": ["integer", "null"],
       "minimum": 1,
       "maximum": 65535
     },
     "scheme": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": ["string", "null"]
     },
     "path": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": ["string", "null"]
     },
     "environment": {
       "type": "string"
     },
     "status": {
       "type": "string",
-      "enum": [
-        "active",
-        "archived",
-        "blocked"
-      ]
+      "enum": ["active", "archived", "blocked"]
     },
     "scope": {
       "type": "object"

@@ -1,0 +1,44 @@
+tool_id: nuclei
+name: Nuclei
+category: vulnerability
+binary: nuclei
+version_command:
+- -version
+docker:
+  image: ai-pentest-tools:latest
+  binary: nuclei
+target_types:
+- url
+- host_port
+- domain
+- ipv4
+capabilities:
+- template_vulnerability_scan
+- cve_detection
+- misconfiguration_check
+input_types:
+- url
+- host
+output_formats:
+- jsonl
+- raw
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_nuclei.py
+evidence_directory: toolkit/05-vulnerability/scans
+enabled: true
+tags:
+- vulnerability
+- templates
+- cve
+- dast
+- projectdiscovery
+- dual-mode
+safe_flags:
+- -tags
+- cve
+- -severity
+- low,medium,high,critical
+- -rate-limit
+- '50'
+binary_lookup_paths: []

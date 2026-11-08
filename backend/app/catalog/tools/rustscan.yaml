@@ -1,0 +1,40 @@
+tool_id: rustscan
+name: RustScan
+category: network
+binary: rustscan
+version_command:
+- --version
+docker:
+  image: ai-pentest-tools:latest
+  binary: rustscan
+target_types:
+- ipv4
+- domain
+- hostname
+- cidr
+capabilities:
+- fast_port_discovery
+- nmap_pipe
+input_types:
+- ip
+- hostname
+output_formats:
+- json
+- raw
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_rustscan.py
+evidence_directory: toolkit/03-network/scans
+enabled: true
+tags:
+- network
+- port-scan
+- adaptive
+- rust
+safe_flags:
+- --top
+- -b
+- '500'
+binary_lookup_paths:
+- C:\rustscan\rustscan.exe
+- C:\Users\DUC_THUAN\.cargo\bin\rustscan.exe

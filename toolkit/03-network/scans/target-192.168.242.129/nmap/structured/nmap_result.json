@@ -1,0 +1,300 @@
+{
+  "scan_metadata": {
+    "tool": "nmap",
+    "target": "192.168.242.129",
+    "command": "nmap -sV -Pn -T4 -F 192.168.242.129 -oX /run/media/ducthuan/54AC7DBAAC7D96E8/Shared/Projects/ai-pentest-copilot/toolkit/03-network/scans/target-192.168.242.129/nmap/raw/nmap_raw.xml -oN /run/media/ducthuan/54AC7DBAAC7D96E8/Shared/Projects/ai-pentest-copilot/toolkit/03-network/scans/target-192.168.242.129/nmap/normal/nmap_normal.txt",
+    "arguments": "-sV -Pn -T4 -F 192.168.242.129 -oX /run/media/ducthuan/54AC7DBAAC7D96E8/Shared/Projects/ai-pentest-copilot/toolkit/03-network/scans/target-192.168.242.129/nmap/raw/nmap_raw.xml -oN /run/media/ducthuan/54AC7DBAAC7D96E8/Shared/Projects/ai-pentest-copilot/toolkit/03-network/scans/target-192.168.242.129/nmap/normal/nmap_normal.txt",
+    "timestamp": "2026-09-19T22:53:42.150384+00:00",
+    "duration_seconds": 11.750249147415161,
+    "exit_code": 0
+  },
+  "hosts": [
+    {
+      "status": {
+        "state": "up",
+        "reason": "user-set"
+      },
+      "addresses": {
+        "ipv4": "192.168.242.129"
+      },
+      "hostnames": [],
+      "ports": [
+        {
+          "portid": 21,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "ftp",
+            "product": "vsftpd",
+            "version": "2.3.4",
+            "extrainfo": "",
+            "cpe": [
+              "cpe:/a:vsftpd:vsftpd:2.3.4"
+            ]
+          },
+          "scripts": []
+        },
+        {
+          "portid": 22,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "ssh",
+            "product": "OpenSSH",
+            "version": "4.7p1 Debian 8ubuntu1",
+            "extrainfo": "protocol 2.0",
+            "cpe": [
+              "cpe:/a:openbsd:openssh:4.7p1",
+              "cpe:/o:linux:linux_kernel"
+            ]
+          },
+          "scripts": []
+        },
+        {
+          "portid": 23,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "telnet",
+            "product": "Linux telnetd",
+            "version": "",
+            "extrainfo": "",
+            "cpe": [
+              "cpe:/o:linux:linux_kernel"
+            ]
+          },
+          "scripts": []
+        },
+        {
+          "portid": 25,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "smtp",
+            "product": "Postfix smtpd",
+            "version": "",
+            "extrainfo": "",
+            "cpe": [
+              "cpe:/a:postfix:postfix"
+            ]
+          },
+          "scripts": []
+        },
+        {
+          "portid": 53,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "domain",
+            "product": "ISC BIND",
+            "version": "9.4.2",
+            "extrainfo": "",
+            "cpe": [
+              "cpe:/a:isc:bind:9.4.2"
+            ]
+          },
+          "scripts": []
+        },
+        {
+          "portid": 80,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "http",
+            "product": "Apache httpd",
+            "version": "2.2.8",
+            "extrainfo": "(Ubuntu) DAV/2",
+            "cpe": [
+              "cpe:/a:apache:http_server:2.2.8"
+            ]
+          },
+          "scripts": []
+        },
+        {
+          "portid": 111,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "rpcbind",
+            "product": "",
+            "version": "2",
+            "extrainfo": "RPC #100000",
+            "cpe": []
+          },
+          "scripts": []
+        },
+        {
+          "portid": 139,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "netbios-ssn",
+            "product": "Samba smbd",
+            "version": "3.X - 4.X",
+            "extrainfo": "workgroup: WORKGROUP",
+            "cpe": [
+              "cpe:/a:samba:samba"
+            ]
+          },
+          "scripts": []
+        },
+        {
+          "portid": 445,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "netbios-ssn",
+            "product": "Samba smbd",
+            "version": "3.X - 4.X",
+            "extrainfo": "workgroup: WORKGROUP",
+            "cpe": [
+              "cpe:/a:samba:samba"
+            ]
+          },
+          "scripts": []
+        },
+        {
+          "portid": 513,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "login",
+            "product": "",
+            "version": "",
+            "extrainfo": "",
+            "cpe": []
+          },
+          "scripts": []
+        },
+        {
+          "portid": 514,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "shell",
+            "product": "",
+            "version": "",
+            "extrainfo": "",
+            "cpe": []
+          },
+          "scripts": []
+        },
+        {
+          "portid": 2049,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "nfs",
+            "product": "",
+            "version": "2-4",
+            "extrainfo": "RPC #100003",
+            "cpe": []
+          },
+          "scripts": []
+        },
+        {
+          "portid": 2121,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "ftp",
+            "product": "ProFTPD",
+            "version": "1.3.1",
+            "extrainfo": "",
+            "cpe": [
+              "cpe:/a:proftpd:proftpd:1.3.1"
+            ]
+          },
+          "scripts": []
+        },
+        {
+          "portid": 3306,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "mysql",
+            "product": "MySQL",
+            "version": "5.0.51a-3ubuntu5",
+            "extrainfo": "",
+            "cpe": [
+              "cpe:/a:mysql:mysql:5.0.51a-3ubuntu5"
+            ]
+          },
+          "scripts": []
+        },
+        {
+          "portid": 5432,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "postgresql",
+            "product": "PostgreSQL DB",
+            "version": "8.3.0 - 8.3.7",
+            "extrainfo": "",
+            "cpe": [
+              "cpe:/a:postgresql:postgresql:8.3"
+            ]
+          },
+          "scripts": []
+        },
+        {
+          "portid": 5900,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "vnc",
+            "product": "VNC",
+            "version": "",
+            "extrainfo": "protocol 3.3",
+            "cpe": []
+          },
+          "scripts": []
+        },
+        {
+          "portid": 6000,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "X11",
+            "product": "",
+            "version": "",
+            "extrainfo": "access denied",
+            "cpe": []
+          },
+          "scripts": []
+        },
+        {
+          "portid": 8009,
+          "protocol": "tcp",
+          "state": "open",
+          "reason": "syn-ack",
+          "service": {
+            "name": "ajp13",
+            "product": "Apache Jserv",
+            "version": "",
+            "extrainfo": "Protocol v1.3",
+            "cpe": []
+          },
+          "scripts": []
+        }
+      ]
+    }
+  ]
+}

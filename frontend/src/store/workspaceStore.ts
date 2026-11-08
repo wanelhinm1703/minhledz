@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+import { create } from "zustand";
 
 export interface TargetItem {
   target_id: string;
@@ -19,6 +19,7 @@ export interface ScanRecord {
     type: string;
     rel_path: string;
   }>;
+  tool_statuses?: Record<string, any>;
 }
 
 export interface OpenTab {
@@ -38,12 +39,18 @@ interface WorkspaceState {
   terminalLogs: string[];
   isTargetModalOpen: boolean;
   selectedProvider: string;
-  activeView: 'editor' | 'findings' | 'reports';
+  activeView: "editor" | "findings" | "reports" | "topology";
+  isExplorerOpen: boolean;
+  isChatOpen: boolean;
 
   setTargets: (targets: TargetItem[]) => void;
   setScans: (scans: ScanRecord[]) => void;
   setActiveTarget: (target: TargetItem | null) => void;
-  setActiveView: (view: 'editor' | 'findings' | 'reports') => void;
+  setActiveView: (view: "editor" | "findings" | "reports" | "topology") => void;
+  setExplorerOpen: (open: boolean) => void;
+  setChatOpen: (open: boolean) => void;
+  toggleExplorer: () => void;
+  toggleChat: () => void;
   openFile: (file: { name: string; rel_path: string }) => Promise<void>;
   closeTab: (id: string) => void;
   setActiveTab: (id: string) => void;
@@ -64,70 +71,75 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   activeTarget: null,
   openTabs: [],
   activeTabId: null,
-  terminalLogs: [
-    "[*] AI-Pentest Copilot Workspace Initialized.",
-    "[*] Connected to Backend API: http://127.0.0.1:8000",
-    "[*] Knowledge Base ready: 539 CVEs | 52 CWEs loaded.",
-  ],
+  terminalLogs: [],
   isTargetModalOpen: false,
   selectedProvider: "gemini",
   activeView: "editor",
+  isExplorerOpen: true,
+  isChatOpen: true,
 
   setTargets: (targets) => set({ targets }),
   setScans: (scans) => set({ scans }),
   setActiveTarget: (target) => set({ activeTarget: target }),
   setActiveView: (activeView) => set({ activeView }),
+  setExplorerOpen: (open) => set({ isExplorerOpen: open }),
+  setChatOpen: (open) => set({ isChatOpen: open }),
+  toggleExplorer: () => set((state) => ({ isExplorerOpen: !state.isExplorerOpen })),
+  toggleChat: () => set((state) => ({ isChatOpen: !state.isChatOpen })),
   setTargetModalOpen: (open) => set({ isTargetModalOpen: open }),
   setSelectedProvider: (provider) => {
     set({ selectedProvider: provider });
-    fetch('/api/llm/switch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    fetch("/api/llm/switch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ provider }),
-    }).catch((e) => console.error('Failed to sync provider with backend', e));
+    }).catch((e) => console.error("Failed to sync provider with backend", e));
   },
 
   deleteTarget: async (target_id: string) => {
     try {
       const res = await fetch(`/api/targets/${encodeURIComponent(target_id)}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
       if (res.ok) {
-        const nextTargets = get().targets.filter((t) => t.target_id !== target_id);
-        const nextActive = get().activeTarget?.target_id === target_id
-          ? (nextTargets.length > 0 ? nextTargets[0] : null)
-          : get().activeTarget;
+        const nextTargets = get().targets.filter(
+          (t) => t.target_id !== target_id,
+        );
+        const nextActive =
+          get().activeTarget?.target_id === target_id
+            ? nextTargets.length > 0
+              ? nextTargets[0]
+              : null
+            : get().activeTarget;
         set({ targets: nextTargets, activeTarget: nextActive });
-        get().appendTerminalLog(`[*] Deleted target: ${target_id}`);
       }
     } catch (err: any) {
-      get().appendTerminalLog(`[!] Failed to delete target ${target_id}: ${err.message}`);
+      console.error(`Failed to delete target ${target_id}:`, err);
     }
   },
 
   refreshScans: async () => {
     try {
-      const res = await fetch('/api/scans');
+      const res = await fetch("/api/scans");
       if (res.ok) {
         const scans = await res.json();
         set({ scans });
       }
     } catch (e) {
-      console.error('Failed to refresh scans', e);
+      console.error("Failed to refresh scans", e);
     }
   },
 
   deleteScan: async (target_id: string) => {
     try {
       const res = await fetch(`/api/scans/${encodeURIComponent(target_id)}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
       if (res.ok) {
-        get().appendTerminalLog(`[*] Đã xóa toàn bộ dữ liệu scan của: ${target_id}`);
         await get().refreshScans();
       }
     } catch (err: any) {
-      get().appendTerminalLog(`[!] Lỗi khi xóa scan ${target_id}: ${err.message}`);
+      console.error(`Failed to delete scan ${target_id}:`, err);
     }
   },
 
@@ -139,9 +151,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     get().appendTerminalLog(`$ ${cmd}`);
     try {
-      const res = await fetch('/api/terminal/execute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/terminal/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           command: cmd,
           target_id: get().activeTarget?.target_id || null,
@@ -149,33 +161,37 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       });
       const data = await res.json();
       if (!res.ok) {
-        get().appendTerminalLog(`[!] Error: ${data.detail || 'Lệnh thực thi thất bại'}`);
+        get().appendTerminalLog(
+          `[!] Error: ${data.detail || "Lệnh thực thi thất bại"}`,
+        );
         return;
       }
 
       if (data.stdout) {
-        const lines = data.stdout.split('\n');
+        const lines = data.stdout.split("\n");
         for (const line of lines) {
           if (line.trim()) get().appendTerminalLog(line);
         }
       }
       if (data.stderr) {
-        const errLines = data.stderr.split('\n');
+        const errLines = data.stderr.split("\n");
         for (const line of errLines) {
           if (line.trim()) get().appendTerminalLog(`[!] ${line}`);
         }
       }
 
-      get().appendTerminalLog(`[*] Hoàn thành (exit code ${data.exit_code}) trong ${data.duration_seconds}s`);
+      get().appendTerminalLog(
+        `[*] Hoàn thành (exit code ${data.exit_code}) trong ${data.duration_seconds}s`,
+      );
 
       // Auto refresh scans if scanner command was run
       if (
-        cmd.includes('pipeline_runner') ||
-        cmd.includes('run_nmap') ||
-        cmd.includes('run_naabu') ||
-        cmd.includes('run_httpx') ||
-        cmd.includes('run_nuclei') ||
-        cmd.includes('nmap')
+        cmd.includes("pipeline_runner") ||
+        cmd.includes("run_nmap") ||
+        cmd.includes("run_naabu") ||
+        cmd.includes("run_httpx") ||
+        cmd.includes("run_nuclei") ||
+        cmd.includes("nmap")
       ) {
         await get().refreshScans();
       }
@@ -210,7 +226,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     }
 
     try {
-      const res = await fetch(`/api/scans/file?path=${encodeURIComponent(rel_path)}`);
+      const res = await fetch(
+        `/api/scans/file?path=${encodeURIComponent(rel_path)}`,
+      );
       if (!res.ok) throw new Error("Failed to load file");
       const data = await res.json();
 
@@ -236,15 +254,17 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         activeTabId: newTab.id,
       });
     } catch (err: any) {
-      get().appendTerminalLog(`[!] Error loading file ${rel_path}: ${err.message}`);
+      get().appendTerminalLog(
+        `[!] Error loading file ${rel_path}: ${err.message}`,
+      );
     }
   },
 
   fetchInitialData: async () => {
     try {
       const [targetsRes, scansRes] = await Promise.all([
-        fetch('/api/targets'),
-        fetch('/api/scans'),
+        fetch("/api/targets"),
+        fetch("/api/scans"),
       ]);
       if (targetsRes.ok) {
         const targets = await targetsRes.json();

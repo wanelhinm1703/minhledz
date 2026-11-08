@@ -1,0 +1,39 @@
+tool_id: nikto
+name: Nikto
+category: web
+binary: nikto
+version_command:
+- -Version
+docker:
+  image: ai-pentest-tools:latest
+  binary: nikto
+target_types:
+- url
+- host_port
+- domain
+capabilities:
+- web_security_audit
+- misconfiguration_detection
+- outdated_components
+input_types:
+- url
+- host_port
+output_formats:
+- json
+- raw
+risk_level: controlled
+requires_user_confirmation: true
+parser: parse_nikto.py
+evidence_directory: toolkit/04-web/scans
+enabled: true
+tags:
+- web
+- misconfiguration
+- audit
+- server-scan
+safe_flags:
+- -Tuning
+- 123b
+binary_lookup_paths:
+- C:\ProgramData\chocolatey\bin\nikto.bat
+- C:\nikto\program\nikto.pl

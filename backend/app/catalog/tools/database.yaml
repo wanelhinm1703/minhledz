@@ -1,0 +1,34 @@
+tool_id: database
+name: Database Clients
+category: service_enum
+binary: mysql
+version_command:
+- --version
+docker:
+  image: ai-pentest-tools:latest
+  binary: mysql
+target_types:
+- ipv4
+- host_port
+capabilities:
+- db_banner_probe
+- anonymous_login_check
+- ping_check
+input_types:
+- host_port
+output_formats:
+- raw
+- json
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_service_enum.py
+evidence_directory: toolkit/06-service-enum/scans
+enabled: true
+tags:
+- service-enum
+- database
+- mysql
+- postgres
+safe_flags:
+- --connect-timeout=5
+binary_lookup_paths: []

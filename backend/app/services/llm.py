@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-import os
-import re
-import json
 import asyncio
+import json
+import os
 import pathlib
-from typing import AsyncGenerator, Dict, Any, List, Optional
+import re
+import time
+from collections.abc import AsyncGenerator
+from typing import Any
+
 import httpx
 from dotenv import load_dotenv
 
@@ -17,8 +20,8 @@ if _env_path.exists():
     load_dotenv(_env_path)
 
 from backend.app.core.guardrails import check_exploit_intent, format_guardrail_refusal
+from backend.app.core.observability import observability
 from backend.app.core.prompts import SYSTEM_PROMPT
-
 
 
 class LLMService:
@@ -26,7 +29,12 @@ class LLMService:
 
     def __init__(self):
         self.active_provider = self._detect_provider()
-        self.active_model = os.getenv("LLM_MODEL", "gemini-flash-lite-latest" if self.active_provider == "gemini" else "offline-security-copilot")
+        self.active_model = os.getenv(
+            "LLM_MODEL",
+            "gemini-flash-lite-latest"
+            if self.active_provider == "gemini"
+            else "offline-security-copilot",
+        )
 
     def _detect_provider(self) -> str:
         prov = os.getenv("LLM_PROVIDER", "").lower()
@@ -42,7 +50,7 @@ class LLMService:
             return "ollama"
         return "offline"
 
-    def get_available_providers(self) -> List[Dict[str, Any]]:
+    def get_available_providers(self) -> list[dict[str, Any]]:
         return [
             {
                 "id": "gemini",
@@ -82,7 +90,7 @@ class LLMService:
             },
         ]
 
-    def switch_provider(self, provider_id: str, model: Optional[str] = None) -> bool:
+    def switch_provider(self, provider_id: str, model: str | None = None) -> bool:
         norm = provider_id.lower().strip()
         alias_map = {
             "gemini": "gemini",
@@ -117,40 +125,78 @@ class LLMService:
         self,
         prompt: str,
         system_prompt: str = SYSTEM_PROMPT,
-        context_data: Optional[Dict[str, Any]] = None,
+        context_data: dict[str, Any] | None = None,
     ) -> AsyncGenerator[str, None]:
         """Stream response chunks using active provider or deterministic fallback."""
+        start_t = time.time()
         # Check exploit guardrail on prompt
         is_exploit, reason = check_exploit_intent(prompt)
         if is_exploit:
             refusal = format_guardrail_refusal(reason)
+            observability.record_trace(
+                name="guardrail_refusal",
+                prompt=prompt,
+                response=refusal,
+                provider=self.active_provider,
+                model=self.active_model,
+                duration_ms=(time.time() - start_t) * 1000.0,
+                tags=["guardrail", "refusal"],
+            )
             for chunk in refusal.split(" "):
                 yield chunk + " "
                 await asyncio.sleep(0.01)
             return
 
-        if self.active_provider == "gemini":
-            try:
-                async for chunk in self._stream_gemini(prompt, system_prompt, context_data):
-                    yield chunk
-            except Exception as e:
-                yield f"\n*[Gemini provider error: {e}. Chuyển sang chế độ Local Security Engine]*\n\n"
+        accumulated: list[str] = []
+        try:
+            if self.active_provider == "gemini":
+                try:
+                    async for chunk in self._stream_gemini(
+                        prompt, system_prompt, context_data
+                    ):
+                        accumulated.append(chunk)
+                        yield chunk
+                except Exception as e:
+                    err_msg = f"\n*[Gemini provider error: {e}. Chuyển sang chế độ Local Security Engine]*\n\n"
+                    accumulated.append(err_msg)
+                    yield err_msg
+                    async for chunk in self._stream_offline(prompt, context_data):
+                        accumulated.append(chunk)
+                        yield chunk
+            elif self.active_provider == "offline":
                 async for chunk in self._stream_offline(prompt, context_data):
+                    accumulated.append(chunk)
                     yield chunk
-        elif self.active_provider == "offline":
-            async for chunk in self._stream_offline(prompt, context_data):
-                yield chunk
-        else:
-            try:
-                async for chunk in self._stream_external_llm(prompt, system_prompt, context_data):
-                    yield chunk
-            except Exception as e:
-                yield f"\n*[Provider error: {e}. Chuyển sang chế độ Local Security Engine]*\n\n"
-                async for chunk in self._stream_offline(prompt, context_data):
-                    yield chunk
+            else:
+                try:
+                    async for chunk in self._stream_external_llm(
+                        prompt, system_prompt, context_data
+                    ):
+                        accumulated.append(chunk)
+                        yield chunk
+                except Exception as e:
+                    err_msg = f"\n*[Provider error: {e}. Chuyển sang chế độ Local Security Engine]*\n\n"
+                    accumulated.append(err_msg)
+                    yield err_msg
+                    async for chunk in self._stream_offline(prompt, context_data):
+                        accumulated.append(chunk)
+                        yield chunk
+        finally:
+            duration_ms = (time.time() - start_t) * 1000.0
+            full_resp = "".join(accumulated)
+            if full_resp:
+                observability.record_trace(
+                    name="llm_stream",
+                    prompt=prompt,
+                    response=full_resp,
+                    provider=self.active_provider,
+                    model=self.active_model,
+                    duration_ms=duration_ms,
+                    tags=["stream", self.active_provider],
+                )
 
     async def _stream_gemini(
-        self, prompt: str, system_prompt: str, context_data: Optional[Dict[str, Any]]
+        self, prompt: str, system_prompt: str, context_data: dict[str, Any] | None
     ) -> AsyncGenerator[str, None]:
         """Stream from Google Gemini API with automatic fallback to lite model if high demand."""
         api_key = os.getenv("GEMINI_API_KEY", "")
@@ -174,7 +220,9 @@ class LLMService:
         # Build comprehensive evidence summary for Gemini
         evidence_parts = []
         if active_target:
-            evidence_parts.append(f"MỤC TIÊU ĐANG KIỂM THỬ (ACTIVE TARGET):\n- Host/Target: {active_target}")
+            evidence_parts.append(
+                f"MỤC TIÊU ĐANG KIỂM THỬ (ACTIVE TARGET):\n- Host/Target: {active_target}"
+            )
 
         if ctx_data and getattr(ctx_data, "active_file", None):
             af = ctx_data.active_file
@@ -190,30 +238,91 @@ class LLMService:
                 scans_lines.append(f"[{tool_name}]: {sc.get('summary', '')}")
                 if sc.get("ports"):
                     for p in sc["ports"]:
-                        scans_lines.append(f"  * {p.get('label')}")
-            evidence_parts.append("KẾT QUẢ QUÉT THỰC TẾ ĐÃ THU THẬP ĐƯỢC TRÊN MỤC TIÊU:\n" + "\n".join(scans_lines))
+                        if isinstance(p, dict):
+                            label = p.get("label")
+                            if not label:
+                                port_id = p.get("port") or p.get("portid") or ""
+                                proto = p.get("protocol", "tcp")
+                                svc = p.get("service") or p.get("name") or ""
+                                prod = p.get("product", "")
+                                ver = p.get("version", "")
+                                details = " ".join(filter(None, [str(svc), str(prod), str(ver)]))
+                                label = f"Port {port_id}/{proto}" + (f": {details}" if details else "")
+                            scans_lines.append(f"  * {label}")
+                        else:
+                            scans_lines.append(f"  * Port {p}")
+
+            evidence_parts.append(
+                "KẾT QUẢ QUÉT THỰC TẾ ĐÃ THU THẬP ĐƯỢC TRÊN MỤC TIÊU:\n"
+                + "\n".join(scans_lines)
+            )
 
         if (context_data or {}).get("correlations"):
             corr_text = []
             for c in (context_data.get("correlations") or [])[:3]:
-                corr_text.append(f"- {c.get('cve_id')} (CVSS {c.get('cvss_score', 'N/A')}): {c.get('description', '')[:140]}")
-            evidence_parts.append("LỖ HỔNG TƯƠNG QUAN TRONG KNOWLEDGE BASE:\n" + "\n".join(corr_text))
+                corr_text.append(
+                    f"- {c.get('cve_id')} (CVSS {c.get('cvss_score', 'N/A')}): {c.get('description', '')[:140]}"
+                )
+            evidence_parts.append(
+                "LỖ HỔNG TƯƠNG QUAN TRONG KNOWLEDGE BASE:\n" + "\n".join(corr_text)
+            )
 
         if ctx_data and getattr(ctx_data, "conversation_history", None):
             hist = ctx_data.conversation_history[-4:]
             hist_lines = []
             for h in hist:
                 hist_lines.append(f"- {h.get('role').upper()}: {h.get('content')}")
-            evidence_parts.append("LỊCH SỬ TRAO ĐỔI TRONG PHIÊN NÀY:\n" + "\n".join(hist_lines))
+            evidence_parts.append(
+                "LỊCH SỬ TRAO ĐỔI TRONG PHIÊN NÀY:\n" + "\n".join(hist_lines)
+            )
+
+        # Process user attachments (images for Gemini Multimodal Vision, files for context)
+        attachments = (
+            (context_data or {}).get("attachments")
+            or (getattr(ctx_data, "attachments", None) if ctx_data else None)
+            or []
+        )
+        inline_image_parts = []
+        for att in attachments:
+            name = att.get("name", "attachment")
+            mime = att.get("type", "")
+            raw_data = att.get("data") or att.get("content") or ""
+            if mime.startswith("image/") or raw_data.startswith("data:image/"):
+                img_mime = mime if mime.startswith("image/") else "image/png"
+                clean_b64 = raw_data
+                if "," in raw_data:
+                    header, clean_b64 = raw_data.split(",", 1)
+                    if "image/" in header:
+                        img_mime = header.split(";")[0].replace("data:", "")
+                if clean_b64:
+                    inline_image_parts.append(
+                        {
+                            "inline_data": {
+                                "mime_type": img_mime,
+                                "data": clean_b64.strip(),
+                            }
+                        }
+                    )
+            else:
+                fcontent = att.get("content") or att.get("data") or ""
+                if fcontent:
+                    if len(fcontent) > 10000:
+                        fcontent = fcontent[:10000] + "\n... [truncated]"
+                    evidence_parts.append(
+                        f"TẬP TIN ĐÍNH KÈM TỪ PENTESTER ({name} - {mime}):\n```\n{fcontent}\n```"
+                    )
 
         evidence_summary = "\n\n".join(evidence_parts)
         if evidence_summary:
             contents_text = (
-                f"[DỮ LIỆU CHỨNG CỨ PENTEST VÀ TẬP TIN ĐANG MỞ TRÊN GIAO DIỆN]\n{evidence_summary}\n\n"
+                f"[DỮ LIỆU CHỨNG CỨ PENTEST, HÌNH ẢNH & TẬP TIN ĐÍNH KÈM]\n{evidence_summary}\n\n"
                 f"[CÂU HỎI CỦA PENTESTER CẦN TRẢ LỜI]\n{real_user_query}"
             )
         else:
             contents_text = f"CÂU HỎI CỦA NGƯỜI DÙNG: {real_user_query}"
+
+        gemini_parts = list(inline_image_parts)
+        gemini_parts.append({"text": contents_text})
 
         payload = {
             "system_instruction": {
@@ -221,14 +330,14 @@ class LLMService:
                     {
                         "text": (
                             (system_prompt or SYSTEM_PROMPT)
-                            + "\n\nQUY TẮC QUAN TRỌNG: Bạn đang tích hợp trực tiếp trong IDE AI-Pentest Copilot. Hãy đọc kỹ phần [DỮ LIỆU CHỨNG CỨ PENTEST VÀ TẬP TIN ĐANG MỞ TRÊN GIAO DIỆN] ở trên để trả lời TRỰC TIẾP, ĐÚNG TRỌNG TÂM câu hỏi của người dùng bằng tiếng Việt chuyên nghiệp, định dạng Markdown rõ ràng. "
-                            + "Khi người dùng hỏi về cổng, dịch vụ hay lỗ hổng, hãy trích dẫn chính xác các cổng, phiên bản, dịch vụ xuất hiện trong chứng cứ scan hoặc file đang mở trong editor. "
-                            + "Không từ chối khi đã có chứng cứ scan hoặc file đang mở."
+                            + "\n\nQUY TẮC QUAN TRỌNG: Bạn đang tích hợp trực tiếp trong IDE AI-Pentest Copilot. Hãy đọc kỹ phần [DỮ LIỆU CHỨNG CỨ PENTEST, HÌNH ẢNH & TẬP TIN ĐÍNH KÈM] ở trên để trả lời TRỰC TIẾP, ĐÚNG TRỌNG TÂM câu hỏi của người dùng bằng tiếng Việt chuyên nghiệp, định dạng Markdown rõ ràng. "
+                            + "Khi người dùng gửi ảnh (ảnh chụp màn hình terminal, Burp Suite, ứng dụng web, log, sơ đồ mạng), hãy quan sát và phân tích kỹ các yếu tố kỹ thuật trong ảnh (mã trạng thái, URL, parameter, tiêu đề, banner, lỗi). "
+                            + "Khi người dùng gửi tập tin đính kèm (script, file log, scan report), hãy đọc mã nguồn và nội dung để đánh giá chính xác."
                         )
                     }
                 ]
             },
-            "contents": [{"parts": [{"text": contents_text}]}],
+            "contents": [{"parts": gemini_parts}],
             "generationConfig": {
                 "temperature": 0.3,
                 "maxOutputTokens": 2048,
@@ -236,7 +345,9 @@ class LLMService:
         }
 
         models_to_try = [
-            self.active_model if self.active_model not in ("offline-security-copilot", "") else "gemini-flash-lite-latest",
+            self.active_model
+            if self.active_model not in ("offline-security-copilot", "")
+            else "gemini-flash-lite-latest",
             "gemini-flash-lite-latest",
             "gemini-flash-latest",
             "gemini-2.5-flash-lite",
@@ -263,7 +374,11 @@ class LLMService:
                                         parsed = json.loads(data_str)
                                         candidates = parsed.get("candidates", [])
                                         if candidates:
-                                            parts = candidates[0].get("content", {}).get("parts", [])
+                                            parts = (
+                                                candidates[0]
+                                                .get("content", {})
+                                                .get("parts", [])
+                                            )
                                             for p in parts:
                                                 txt = p.get("text", "")
                                                 if txt:
@@ -283,20 +398,27 @@ class LLMService:
         async for chunk in self._stream_offline(prompt, context_data):
             yield chunk
 
-
     async def _stream_external_llm(
-        self, prompt: str, system_prompt: str, context_data: Optional[Dict[str, Any]]
+        self, prompt: str, system_prompt: str, context_data: dict[str, Any] | None
     ) -> AsyncGenerator[str, None]:
         """Stream from OpenAI, Ollama, or custom OpenAI-compatible endpoints using native httpx."""
         if self.active_provider == "openai":
             api_key = os.getenv("OPENAI_API_KEY", "")
             base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-            model = self.active_model if self.active_model != "offline-security-copilot" else "gpt-4o-mini"
+            model = (
+                self.active_model
+                if self.active_model != "offline-security-copilot"
+                else "gpt-4o-mini"
+            )
         elif self.active_provider == "ollama":
             api_key = "ollama"
             ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
             base_url = f"{ollama_host.rstrip('/')}/v1"
-            model = self.active_model if self.active_model != "offline-security-copilot" else "llama3"
+            model = (
+                self.active_model
+                if self.active_model != "offline-security-copilot"
+                else "llama3"
+            )
         elif self.active_provider == "custom":
             api_key = os.getenv("CUSTOM_LLM_KEY", "custom")
             base_url = os.getenv("CUSTOM_LLM_URL", "http://localhost:8080/v1")
@@ -322,10 +444,14 @@ class LLMService:
         }
 
         async with httpx.AsyncClient(timeout=60.0) as client:
-            async with client.stream("POST", endpoint, headers=headers, json=body) as response:
+            async with client.stream(
+                "POST", endpoint, headers=headers, json=body
+            ) as response:
                 if response.status_code != 200:
                     err_text = await response.aread()
-                    raise RuntimeError(f"HTTP {response.status_code}: {err_text.decode('utf-8', errors='ignore')[:200]}")
+                    raise RuntimeError(
+                        f"HTTP {response.status_code}: {err_text.decode('utf-8', errors='ignore')[:200]}"
+                    )
 
                 async for line in response.aiter_lines():
                     line = line.strip()
@@ -337,14 +463,18 @@ class LLMService:
                             break
                         try:
                             parsed = json.loads(data_str)
-                            delta = parsed.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                            delta = (
+                                parsed.get("choices", [{}])[0]
+                                .get("delta", {})
+                                .get("content", "")
+                            )
                             if delta:
                                 yield delta
                         except Exception:
                             continue
 
     async def _stream_offline(
-        self, prompt: str, context_data: Optional[Dict[str, Any]]
+        self, prompt: str, context_data: dict[str, Any] | None
     ) -> AsyncGenerator[str, None]:
         """High-fidelity security reasoning generator adhering to Master Spec rules."""
         full_text, _, _ = self.generate_offline_answer(prompt, context_data)
@@ -355,14 +485,14 @@ class LLMService:
                 await asyncio.sleep(0.001)
 
     def generate_offline_answer(
-        self, prompt: str, context_data: Optional[Dict[str, Any]] = None
-    ) -> tuple[str, float, List[str]]:
+        self, prompt: str, context_data: dict[str, Any] | None = None
+    ) -> tuple[str, float, list[str]]:
         """Generate deterministic, grounded security copilot response with citations."""
         correlations = (context_data or {}).get("correlations", [])
         rag_results = (context_data or {}).get("rag_results", [])
         active_target = (context_data or {}).get("active_target", "")
         active_file = (context_data or {}).get("active_file")
-        ctx_data = (context_data or {}).get("ctx_data")
+        ctx_data = (context_data or {}).get("ctx_data") or (context_data or {}).get("context")
 
         # Extract user raw query
         user_query = ""
@@ -390,22 +520,39 @@ class LLMService:
 
         # 1. Handle Meta Questions ("sao không trả lời", "bạn làm được gì", "chào")
         is_meta_question = bool(
-            re.search(r"(sao|tại sao).*(ko|không)|(ko|không).*(trả lời|theo yêu cầu|theo các câu hỏi)|bạn làm được gì|bạn là ai|chức năng của bạn", query_lower)
-            or query_lower in ("help", "trợ giúp", "hướng dẫn", "xin chào", "chào bạn", "chào", "hello", "hi")
+            re.search(
+                r"(sao|tại sao).*(ko|không)|(ko|không).*(trả lời|theo yêu cầu|theo các câu hỏi)|bạn làm được gì|bạn là ai|chức năng của bạn",
+                query_lower,
+            )
+            or query_lower
+            in (
+                "help",
+                "trợ giúp",
+                "hướng dẫn",
+                "xin chào",
+                "chào bạn",
+                "chào",
+                "hello",
+                "hi",
+            )
         )
         if is_meta_question:
-            target_info = f"Mục tiêu hiện tại: `{active_target}`" if active_target else "Chưa chọn mục tiêu (hãy bấm 'Set Target')"
+            target_info = (
+                f"Mục tiêu hiện tại: `{active_target}`"
+                if active_target
+                else "Chưa chọn mục tiêu (hãy bấm 'Set Target')"
+            )
             return (
                 f"### 🤖 Trợ Giúp Từ AI-Pentest Copilot\n\n"
-                f"Tôi đã tiếp nhận câu hỏi của bạn: *\"{user_query}\"*\n\n"
+                f'Tôi đã tiếp nhận câu hỏi của bạn: *"{user_query}"*\n\n'
                 f"- **Mục tiêu đang chọn**: `{active_target or '192.168.100.153'}`\n"
                 f"- **Nhà cung cấp AI**: `{self.active_provider}` (Model: `{self.active_model}`)\n\n"
                 f"#### Bạn có thể yêu cầu tôi thực hiện các tác vụ pentest sau:\n"
-                f"1. **Phân tích cổng & dịch vụ**: Gõ *\"Phân tích các cổng mở trên target\"* để đọc dữ liệu Nmap.\n"
-                f"2. **Đánh giá rủi ro an toàn**: Gõ *\"Mục tiêu {active_target or 'hiện tại'} có an toàn không?\"*.\n"
-                f"3. **Tra cứu lỗ hổng CVE**: Gõ *\"Apache 2.4.49 có CVE gì?\"* hoặc tra cứu CVE bất kỳ.\n"
-                f"4. **Kế hoạch kiểm tra an toàn**: Gõ *\"Tạo verification plan an toàn (read-only)\"*.\n"
-                f"5. **Chiến lược phòng thủ & khắc phục**: Gõ *\"Hướng dẫn cách phòng thủ và vá lỗi\"*.\n\n"
+                f'1. **Phân tích cổng & dịch vụ**: Gõ *"Phân tích các cổng mở trên target"* để đọc dữ liệu Nmap.\n'
+                f'2. **Đánh giá rủi ro an toàn**: Gõ *"Mục tiêu {active_target or "hiện tại"} có an toàn không?"*.\n'
+                f'3. **Tra cứu lỗ hổng CVE**: Gõ *"Apache 2.4.49 có CVE gì?"* hoặc tra cứu CVE bất kỳ.\n'
+                f'4. **Kế hoạch kiểm tra an toàn**: Gõ *"Tạo verification plan an toàn (read-only)"*.\n'
+                f'5. **Chiến lược phòng thủ & khắc phục**: Gõ *"Hướng dẫn cách phòng thủ và vá lỗi"*.\n\n'
                 f"> 💡 *Mẹo: Nếu muốn trò chuyện tự do mọi chủ đề bằng trí tuệ nhân tạo thế hệ mới của Google, hãy chọn **✨ Gemini Flash (Google)** ở menu AI góc trên!*",
                 0.95,
                 [
@@ -416,7 +563,10 @@ class LLMService:
             )
 
         # 2. Check if user asks about Remediation / Phòng thủ / Vá lỗi
-        if re.search(r"phòng thủ|khắc phục|vá|fix|sửa|bảo vệ|remediation|hardening|mitigation|bảo mật", query_lower):
+        if re.search(
+            r"phòng thủ|khắc phục|vá|fix|sửa|bảo vệ|remediation|hardening|mitigation|bảo mật",
+            query_lower,
+        ):
             target_str = active_target or "hệ thống mục tiêu"
             return (
                 f"### 🛡️ Chiến Lược Phòng Thủ & Khắc Phục Lỗ Hổng ({target_str})\n\n"
@@ -440,7 +590,9 @@ class LLMService:
             )
 
         # 3. Check if user asks about Safe Verification / Kiểm tra an toàn
-        if re.search(r"kiểm tra|xác minh|test|verification|check|read-only", query_lower):
+        if re.search(
+            r"kiểm tra|xác minh|test|verification|check|read-only", query_lower
+        ):
             target_host = active_target or "192.168.100.153"
             return (
                 f"### 🧪 Kế Hoạch Xác Minh An Toàn (Safe Read-Only Verification Plan)\n\n"
@@ -483,67 +635,145 @@ class LLMService:
                     f"1. Kiểm tra lại chuỗi banner phiên bản thông qua scan chi tiết: `nmap -sV --version-intensity 9 <target>`.\n"
                     f"2. Cập nhật Knowledge Base nếu phiên bản này mới phát hành.",
                     0.95,
-                    ["Verify banner string directly on target", "Update Vulnerability KB"],
+                    [
+                        "Verify banner string directly on target",
+                        "Update Vulnerability KB",
+                    ],
                 )
 
         # 5. Check if user asks about Scan Analysis / Port Analysis / File Explanation / Target Safety
-        if re.search(r"cổng|port|dịch vụ|service|scan|nmap|httpx|nuclei|kết quả|file|phân tích|an toàn|mục tiêu|target|đánh giá|tổng quan|tổng kết", query_lower):
+        if re.search(
+            r"cổng|port|dịch vụ|service|scan|nmap|httpx|nuclei|kết quả|file|phân tích|an toàn|mục tiêu|target|đánh giá|tổng quan|tổng kết",
+            query_lower,
+        ):
             ports_found = []
 
             # 1. Check recent_scans from context engine
             if ctx_data and getattr(ctx_data, "recent_scans", None):
                 for sc in ctx_data.recent_scans:
                     for p in sc.get("ports", []):
-                        ports_found.append(f"- **Port {p.get('port')}/{p.get('protocol', 'tcp')}** ({p.get('state', 'open')}): `{p.get('service', '')}` - {p.get('product', '')} {p.get('version', '')}".strip())
+                        if isinstance(p, dict):
+                            p_num = p.get("port") or p.get("portid") or ""
+                            p_proto = p.get("protocol", "tcp")
+                            p_state = p.get("state", "open")
+                            p_svc = p.get("service", "")
+                            p_prod = p.get("product", "")
+                            p_ver = p.get("version", "")
+                            desc = f"`{p_svc}` - {p_prod} {p_ver}".strip()
+                            if desc and desc != "` ` -":
+                                ports_found.append(
+                                    f"- **Port {p_num}/{p_proto}** ({p_state}): {desc}".strip()
+                                )
+                            else:
+                                ports_found.append(
+                                    f"- **Port {p_num}/{p_proto}** ({p_state})".strip()
+                                )
+                        else:
+                            ports_found.append(f"- **Port {p}**: Open")
+
 
             # 2. Check active file
             if not ports_found and active_file:
-                content_str = active_file.get("content", "") if isinstance(active_file, dict) else ""
-                port_matches = re.findall(r'"portid":\s*(\d+).*?"name":\s*"([^"]+)"', content_str)
+                content_str = (
+                    active_file.get("content", "")
+                    if isinstance(active_file, dict)
+                    else ""
+                )
+                port_matches = re.findall(
+                    r'"portid":\s*(\d+).*?"name":\s*"([^"]+)"', content_str
+                )
                 if not port_matches:
-                    port_matches = re.findall(r'(\d+)/(tcp|udp)\s+open\s+([^\r\n]+)', content_str)
+                    port_matches = re.findall(
+                        r"(\d+)/(tcp|udp)\s+open\s+([^\r\n]+)", content_str
+                    )
                 for p, s, *rest in port_matches[:6]:
                     ports_found.append(f"- **Port {p}**: `{s}`")
 
             # 3. Check target files on disk
             if not ports_found and active_target:
                 root_dir = pathlib.Path(__file__).resolve().parent.parent.parent.parent
-                target_clean = active_target.replace("http://", "").replace("https://", "").replace("/", "").replace(":", "-")
-                for key in [active_target, target_clean, f"target-{active_target}", f"target-{target_clean}"]:
-                    scan_json = root_dir / "toolkit" / "03-network" / "scans" / key / "nmap" / "structured" / "nmap_result.json"
+                target_clean = (
+                    active_target.replace("http://", "")
+                    .replace("https://", "")
+                    .replace("/", "")
+                    .replace(":", "-")
+                )
+                for key in [
+                    active_target,
+                    target_clean,
+                    f"target-{active_target}",
+                    f"target-{target_clean}",
+                ]:
+                    scan_json = (
+                        root_dir
+                        / "toolkit"
+                        / "03-network"
+                        / "scans"
+                        / key
+                        / "nmap"
+                        / "structured"
+                        / "nmap_result.json"
+                    )
                     if scan_json.exists():
                         try:
-                            nmap_data = json.loads(scan_json.read_text(encoding="utf-8"))
+                            nmap_data = json.loads(
+                                scan_json.read_text(encoding="utf-8")
+                            )
                             for host in nmap_data.get("hosts", []):
                                 for p in host.get("ports", []):
-                                    s = p.get("service", {})
-                                    p_id = p.get("portid")
-                                    proto = p.get("protocol", "tcp")
-                                    state = p.get("state", "open")
-                                    s_name = s.get("name", "")
-                                    s_prod = s.get("product", "")
-                                    s_ver = s.get("version", "")
-                                    ports_found.append(f"- **Port {p_id}/{proto}** ({state}): `{s_name}` - {s_prod} {s_ver}".strip())
+                                    if isinstance(p, dict):
+                                        s = p.get("service", {}) if isinstance(p.get("service"), dict) else {}
+                                        p_id = p.get("portid") or p.get("port")
+                                        proto = p.get("protocol", "tcp")
+                                        state = p.get("state", "open")
+                                        s_name = s.get("name", "")
+                                        s_prod = s.get("product", "")
+                                        s_ver = s.get("version", "")
+                                        ports_found.append(
+                                            f"- **Port {p_id}/{proto}** ({state}): `{s_name}` - {s_prod} {s_ver}".strip()
+                                        )
+                                    else:
+                                        ports_found.append(f"- **Port {p}**: Open")
+
                             if ports_found:
                                 break
                         except Exception:
                             pass
 
             target_display = active_target or "192.168.100.153"
-            ports_list_md = "\n".join(ports_found) if ports_found else "- **Chưa tìm thấy cổng mở nào trong file scan hiện tại**"
+            ports_list_md = (
+                "\n".join(ports_found)
+                if ports_found
+                else "- **Chưa tìm thấy cổng mở nào trong file scan hiện tại**"
+            )
 
             # Tailor analysis to actual ports
-            has_smb_rpc = any("135" in p or "139" in p or "445" in p or "msrpc" in p or "microsoft" in p for p in ports_found)
+            has_smb_rpc = any(
+                "135" in p
+                or "139" in p
+                or "445" in p
+                or "msrpc" in p
+                or "microsoft" in p
+                for p in ports_found
+            )
             has_web = any("80" in p or "443" in p or "http" in p for p in ports_found)
 
             surface_points = []
             if has_smb_rpc:
-                surface_points.append("1. **Dịch vụ Mạng Windows (MSRPC / SMB / NetBIOS)**: Phát hiện cổng 135, 139, 445 đang mở. Đây là bề mặt quản trị nội bộ Windows, cần kiểm tra phân quyền truy cập, vô hiệu hóa SMBv1, và kiểm tra Null Session / Guest access.")
+                surface_points.append(
+                    "1. **Dịch vụ Mạng Windows (MSRPC / SMB / NetBIOS)**: Phát hiện cổng 135, 139, 445 đang mở. Đây là bề mặt quản trị nội bộ Windows, cần kiểm tra phân quyền truy cập, vô hiệu hóa SMBv1, và kiểm tra Null Session / Guest access."
+                )
             if has_web:
-                surface_points.append("2. **Dịch vụ Web**: Phát hiện cổng HTTP/HTTPS. Cần kiểm tra phiên bản web server và rà soát các endpoint nhạy cảm.")
+                surface_points.append(
+                    "2. **Dịch vụ Web**: Phát hiện cổng HTTP/HTTPS. Cần kiểm tra phiên bản web server và rà soát các endpoint nhạy cảm."
+                )
             if not surface_points:
-                surface_points.append("1. **Bề mặt tấn công**: Cần kiểm tra cấu hình tường lửa và các dịch vụ mạng đang lắng nghe.")
-            surface_points.append(f"{len(surface_points) + 1}. **Khuyến nghị**: Thực hiện các lệnh kiểm tra an toàn (safe read-only validation) để xác minh cấu hình dịch vụ.")
+                surface_points.append(
+                    "1. **Bề mặt tấn công**: Cần kiểm tra cấu hình tường lửa và các dịch vụ mạng đang lắng nghe."
+                )
+            surface_points.append(
+                f"{len(surface_points) + 1}. **Khuyến nghị**: Thực hiện các lệnh kiểm tra an toàn (safe read-only validation) để xác minh cấu hình dịch vụ."
+            )
 
             return (
                 f"### 📊 Báo Cáo Phân Tích Dịch Vụ & Cổng Mạng ({target_display})\n\n"
@@ -622,10 +852,10 @@ class LLMService:
             f"Tôi là AI-Pentest Copilot. Tôi đang quan sát target: `{active_target or 'chưa chọn'}`.\n\n"
             f"- **Nguyên tắc hoạt động**: Không tự ý exploit, luôn cung cấp lệnh reviewable và kiểm tra safe read-only.\n"
             f"- Bạn có thể hỏi tôi:\n"
-            f"  + *\"Phân tích các cổng mở trên target\"*\n"
-            f"  + *\"Apache 2.4.49 có CVE gì?\"*\n"
-            f"  + *\"Hướng dẫn cách phòng thủ và vá lỗi\"*\n"
-            f"  + *\"Tạo verification plan an toàn\"*",
+            f'  + *"Phân tích các cổng mở trên target"*\n'
+            f'  + *"Apache 2.4.49 có CVE gì?"*\n'
+            f'  + *"Hướng dẫn cách phòng thủ và vá lỗi"*\n'
+            f'  + *"Tạo verification plan an toàn"*',
             0.90,
             [
                 "Phân tích các cổng mở trên target",

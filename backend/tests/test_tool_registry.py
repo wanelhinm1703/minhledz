@@ -1,7 +1,7 @@
-import pytest
 from fastapi.testclient import TestClient
+
 from backend.app.main import app
-from backend.app.services.tool_registry import ToolRegistry, tool_registry
+from backend.app.services.tool_registry import tool_registry
 
 client = TestClient(app)
 
@@ -10,21 +10,42 @@ def test_tool_registry_definitions():
     """Verify all 18 tools of the original toolset exist in the registry."""
     required_tools = [
         # Network
-        "nmap", "masscan", "rustscan", "naabu",
+        "nmap",
+        "masscan",
+        "rustscan",
+        "naabu",
         # Web
-        "httpx", "whatweb", "nikto", "gobuster", "ffuf", "katana",
+        "httpx",
+        "whatweb",
+        "nikto",
+        "gobuster",
+        "ffuf",
+        "katana",
         # Vulnerability
-        "nuclei", "nmap-nse", "searchsploit",
+        "nuclei",
+        "nmap-nse",
+        "searchsploit",
         # Service Enum
-        "enum4linux", "smbclient", "snmpwalk", "ldapsearch", "database",
+        "enum4linux",
+        "smbclient",
+        "snmpwalk",
+        "ldapsearch",
+        "database",
         # Proxy / Manual
-        "burpsuite", "zap",
+        "burpsuite",
+        "zap",
     ]
     for tid in required_tools:
         tool_def = tool_registry.get_tool(tid)
         assert tool_def is not None, f"Tool '{tid}' must be registered"
         assert len(tool_def.capabilities) >= 1
-        assert tool_def.category in ("network", "web", "vulnerability", "service_enum", "proxy_manual")
+        assert tool_def.category in (
+            "network",
+            "web",
+            "vulnerability",
+            "service_enum",
+            "proxy_manual",
+        )
 
 
 def test_tool_availability_check():

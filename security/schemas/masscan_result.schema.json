@@ -3,20 +3,11 @@
   "title": "MasscanResult",
   "description": "Schema for structured Masscan port discovery results",
   "type": "object",
-  "required": [
-    "scan_metadata",
-    "hosts"
-  ],
+  "required": ["scan_metadata", "hosts"],
   "properties": {
     "scan_metadata": {
       "type": "object",
-      "required": [
-        "tool",
-        "target",
-        "command",
-        "timestamp",
-        "exit_code"
-      ],
+      "required": ["tool", "target", "command", "timestamp", "exit_code"],
       "properties": {
         "tool": {
           "type": "string"
@@ -48,10 +39,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "ip",
-          "ports"
-        ],
+        "required": ["ip", "ports"],
         "properties": {
           "ip": {
             "type": "string"
@@ -60,11 +48,7 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": [
-                "port",
-                "proto",
-                "status"
-              ],
+              "required": ["port", "proto", "status"],
               "properties": {
                 "port": {
                   "type": "integer"

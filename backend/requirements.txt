@@ -10,3 +10,8 @@ python-nmap>=0.7.1
 litellm>=1.30.0
 aiosqlite>=0.20.0
 sqlalchemy>=2.0.28
+numpy>=1.26.0
+python-dotenv>=1.0.0
+python-multipart>=0.0.9
+websockets>=12.0
+

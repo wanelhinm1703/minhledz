@@ -1,0 +1,19 @@
+{
+  "tool": "httpx",
+  "target_id": "target-192.168.242.129",
+  "target_url": "192.168.242.129",
+  "started_at": "2026-09-19T22:53:42.153500+00:00",
+  "finished_at": "2026-09-19T22:53:43.394936+00:00",
+  "duration_sec": 1.24,
+  "mode": "real",
+  "reason": null,
+  "exit_code": 0,
+  "binary_available": true,
+  "evidence_trustworthy": true,
+  "raw_path": "raw/httpx_raw.jsonl",
+  "raw_sha256": "4eabc51c273dd120efd51568fbce69275a1169ca74022153192e9935af5e1f86",
+  "raw_size_bytes": 749,
+  "finding_count": 1,
+  "warnings": [],
+  "errors": []
+}

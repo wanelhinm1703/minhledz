@@ -1,0 +1,34 @@
+tool_id: naabu
+name: Naabu
+category: network
+binary: naabu
+version_command:
+- -version
+docker:
+  image: ai-pentest-tools:latest
+  binary: naabu
+target_types:
+- ipv4
+- domain
+- hostname
+- cidr
+capabilities:
+- fast_port_discovery
+input_types:
+- ip
+- hostname
+output_formats:
+- raw
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_naabu.py
+evidence_directory: toolkit/03-network/scans
+enabled: true
+tags:
+- network
+- port-scan
+- projectdiscovery
+safe_flags:
+- -rate
+- '1000'
+binary_lookup_paths: []

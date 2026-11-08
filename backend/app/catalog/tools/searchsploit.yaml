@@ -1,0 +1,36 @@
+tool_id: searchsploit
+name: SearchSploit
+category: vulnerability
+binary: searchsploit
+version_command:
+- -h
+docker:
+  image: ai-pentest-tools:latest
+  binary: searchsploit
+target_types:
+- custom
+capabilities:
+- exploit_db_lookup
+- cve_reference_search
+- offline_reference
+input_types:
+- product_version
+output_formats:
+- json
+- raw
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_searchsploit.py
+evidence_directory: toolkit/05-vulnerability/scans
+enabled: true
+tags:
+- vulnerability
+- exploitdb
+- offline
+- cve-lookup
+- dual-mode
+- online-fallback
+safe_flags:
+- --json
+binary_lookup_paths:
+- C:\ProgramData\chocolatey\bin\searchsploit.bat

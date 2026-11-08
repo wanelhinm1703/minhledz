@@ -1,0 +1,36 @@
+{
+  "target_id": "192.168.132.130",
+  "campaign_name": "Automated Lab Assessment",
+  "generated_at": "2026-09-17 15:16:08 UTC",
+  "summary": {
+    "total": 0,
+    "by_severity": {
+      "CRITICAL": 0,
+      "HIGH": 0,
+      "MEDIUM": 0,
+      "LOW": 0,
+      "INFO": 0
+    },
+    "by_status": {
+      "CANDIDATE": 0,
+      "UNVERIFIED": 0,
+      "VERIFIED": 0,
+      "FALSE_POSITIVE": 0,
+      "RESOLVED": 0
+    },
+    "trustworthy_count": 0,
+    "simulated_count": 0,
+    "has_insufficient_evidence": true
+  },
+  "compliance": {
+    "compliance_score": 100,
+    "status": "PASSED (COMPLIANT)",
+    "total_active_violations": 0,
+    "critical_high_count": 0,
+    "owasp_top_10_breakdown": {},
+    "cwe_top_25_hits": [],
+    "nist_sp_800_115_sections": [],
+    "cis_controls_v8": []
+  },
+  "findings": []
+}

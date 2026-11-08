@@ -1,0 +1,21 @@
+{
+  "tool": "smbclient",
+  "target_id": "target-192.168.242.129",
+  "target_url": "http://192.168.242.129:",
+  "started_at": "2026-09-19T22:53:44.360297+00:00",
+  "finished_at": "2026-09-19T22:53:44.388662+00:00",
+  "duration_sec": 0.03,
+  "mode": "failed",
+  "reason": "execution_error",
+  "exit_code": 1,
+  "binary_available": true,
+  "evidence_trustworthy": false,
+  "raw_path": "raw/smbclient_raw.txt",
+  "raw_sha256": "7845f06429c70f38b5b12125597cfefa75b4540a9e5ff3f673865178fc70a719",
+  "raw_size_bytes": 132,
+  "finding_count": 0,
+  "warnings": [],
+  "errors": [
+    "Exit code 1"
+  ]
+}

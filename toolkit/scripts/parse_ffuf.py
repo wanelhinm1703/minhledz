@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
 import pathlib
-import sys
+from datetime import datetime, timezone
+
 import jsonschema
 
 
@@ -40,17 +40,23 @@ class FfufParser:
                 for r in raw_results:
                     inp = r.get("input", {})
                     # If input is dict like {"FUZZ": "login"}, extract first value
-                    input_str = next(iter(inp.values())) if isinstance(inp, dict) and inp else str(inp)
-                    results.append({
-                        "input": str(input_str),
-                        "position": int(r.get("position", 0)),
-                        "status": int(r.get("status", 200)),
-                        "length": int(r.get("length", 0)),
-                        "words": int(r.get("words", 0)),
-                        "lines": int(r.get("lines", 0)),
-                        "url": r.get("url", ""),
-                        "redirectlocation": r.get("redirectlocation", ""),
-                    })
+                    input_str = (
+                        next(iter(inp.values()))
+                        if isinstance(inp, dict) and inp
+                        else str(inp)
+                    )
+                    results.append(
+                        {
+                            "input": str(input_str),
+                            "position": int(r.get("position", 0)),
+                            "status": int(r.get("status", 200)),
+                            "length": int(r.get("length", 0)),
+                            "words": int(r.get("words", 0)),
+                            "lines": int(r.get("lines", 0)),
+                            "url": r.get("url", ""),
+                            "redirectlocation": r.get("redirectlocation", ""),
+                        }
+                    )
         except Exception:
             pass
 
@@ -69,7 +75,9 @@ class FfufParser:
 def main():
     parser = argparse.ArgumentParser(description="Parse FFUF JSON to Structured JSON")
     parser.add_argument("--json", required=True, help="Path to raw ffuf_raw.json")
-    parser.add_argument("--output", required=True, help="Path to output structured json")
+    parser.add_argument(
+        "--output", required=True, help="Path to output structured json"
+    )
     parser.add_argument("--schema", help="Path to ffuf_result.schema.json")
     args = parser.parse_args()
 

@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
 import pathlib
-import sys
+from datetime import datetime, timezone
+
 import jsonschema
 
 
@@ -39,20 +39,22 @@ class HttpxParser:
                     continue
                 try:
                     record = json.loads(line)
-                    results.append({
-                        "url": record.get("url", ""),
-                        "input": record.get("input", ""),
-                        "host": record.get("host", ""),
-                        "port": int(record.get("port", 80)),
-                        "scheme": record.get("scheme", "http"),
-                        "status_code": int(record.get("status_code", 200)),
-                        "title": record.get("title", ""),
-                        "webserver": record.get("webserver", ""),
-                        "content_type": record.get("content_type", ""),
-                        "content_length": int(record.get("content_length", 0)),
-                        "technologies": record.get("technologies", []),
-                        "response_headers": record.get("response_headers", {}),
-                    })
+                    results.append(
+                        {
+                            "url": record.get("url", ""),
+                            "input": record.get("input", ""),
+                            "host": record.get("host", ""),
+                            "port": int(record.get("port", 80)),
+                            "scheme": record.get("scheme", "http"),
+                            "status_code": int(record.get("status_code", 200)),
+                            "title": record.get("title", ""),
+                            "webserver": record.get("webserver", ""),
+                            "content_type": record.get("content_type", ""),
+                            "content_length": int(record.get("content_length", 0)),
+                            "technologies": record.get("technologies", []),
+                            "response_headers": record.get("response_headers", {}),
+                        }
+                    )
                 except Exception:
                     pass
 
@@ -71,7 +73,9 @@ class HttpxParser:
 def main():
     parser = argparse.ArgumentParser(description="Parse Httpx JSONL to Structured JSON")
     parser.add_argument("--jsonl", required=True, help="Path to raw httpx_raw.jsonl")
-    parser.add_argument("--output", required=True, help="Path to output structured json")
+    parser.add_argument(
+        "--output", required=True, help="Path to output structured json"
+    )
     parser.add_argument("--schema", help="Path to httpx_result.schema.json")
     args = parser.parse_args()
 

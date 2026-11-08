@@ -3,15 +3,12 @@ from __future__ import annotations
 import json
 import pathlib
 import re
-from typing import Dict, List, Optional
+
 import yaml
 
 from backend.app.schemas.target import (
     Target,
-    TargetMetadata,
-    TargetScope,
     TargetStatus,
-    TargetType,
 )
 from backend.app.services.target_normalizer import TargetNormalizer
 from backend.app.services.target_parser import TargetParser
@@ -24,7 +21,7 @@ def re_slug(text: str) -> str:
 
 
 class TargetRegistry:
-    def __init__(self, storage_dir: Optional[pathlib.Path] = None):
+    def __init__(self, storage_dir: pathlib.Path | None = None):
         if storage_dir is None:
             self.storage_dir = (
                 pathlib.Path(__file__).resolve().parent.parent.parent.parent
@@ -36,7 +33,7 @@ class TargetRegistry:
             self.storage_dir = storage_dir
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         self.registry_file = self.storage_dir / "targets.json"
-        self._targets: Dict[str, Target] = {}
+        self._targets: dict[str, Target] = {}
         self._load()
 
     def _load(self):
@@ -57,15 +54,17 @@ class TargetRegistry:
         self,
         raw_input: str,
         campaign_id: str = "lab-local",
-        name: Optional[str] = None,
+        name: str | None = None,
         environment: str = "lab",
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
     ) -> Target:
         parsed = TargetParser.parse(raw_input)
         normalized = TargetNormalizer.normalize(parsed)
         val_res = TargetValidator.validate(parsed, normalized)
         if not val_res.is_valid:
-            raise ValueError(f"Invalid target input '{raw_input}': {'; '.join(val_res.errors)}")
+            raise ValueError(
+                f"Invalid target input '{raw_input}': {'; '.join(val_res.errors)}"
+            )
 
         clean_host = re_slug(normalized["host"])
         port_suffix = f"-{normalized['port']}" if normalized.get("port") else ""
@@ -92,10 +91,10 @@ class TargetRegistry:
         self._save()
         return target
 
-    def get(self, target_id: str) -> Optional[Target]:
+    def get(self, target_id: str) -> Target | None:
         return self._targets.get(target_id)
 
-    def list_all(self) -> List[Target]:
+    def list_all(self) -> list[Target]:
         return list(self._targets.values())
 
     def delete(self, target_id: str) -> bool:
@@ -110,5 +109,6 @@ class TargetRegistry:
         raw_input = data.get("address") or data.get("host") or data.get("raw_input")
         name = data.get("name")
         campaign_id = data.get("campaign", "lab-local")
-        return self.create_from_input(raw_input=raw_input, campaign_id=campaign_id, name=name)
-
+        return self.create_from_input(
+            raw_input=raw_input, campaign_id=campaign_id, name=name
+        )

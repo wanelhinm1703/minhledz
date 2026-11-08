@@ -3,7 +3,7 @@ from __future__ import annotations
 import fnmatch
 import ipaddress
 import os
-from typing import List, Optional
+
 from backend.app.schemas.target import ScopeDecision, Target
 
 
@@ -22,10 +22,12 @@ class ScopeValidator:
         "localhost",
     ]
 
-    def __init__(self, allowed_scopes: Optional[List[str]] = None):
+    def __init__(self, allowed_scopes: list[str] | None = None):
         env_scopes = os.getenv("ALLOWED_SCOPES")
         if env_scopes:
-            self.allowed_scopes = [s.strip() for s in env_scopes.split(",") if s.strip()]
+            self.allowed_scopes = [
+                s.strip() for s in env_scopes.split(",") if s.strip()
+            ]
         elif allowed_scopes is not None:
             self.allowed_scopes = allowed_scopes
         else:
@@ -51,7 +53,11 @@ class ScopeValidator:
         host = target.host
         port = target.port
 
-        if port and target.scope.forbidden_ports and port in target.scope.forbidden_ports:
+        if (
+            port
+            and target.scope.forbidden_ports
+            and port in target.scope.forbidden_ports
+        ):
             return ScopeDecision(
                 allowed=False,
                 reason=f"Port {port} is explicitly listed in forbidden_ports.",

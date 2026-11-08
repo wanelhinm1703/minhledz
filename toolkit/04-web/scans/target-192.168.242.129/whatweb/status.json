@@ -1,0 +1,21 @@
+{
+  "tool": "whatweb",
+  "target_id": "target-192.168.242.129",
+  "target_url": "http://192.168.242.129",
+  "started_at": "2026-09-19T22:53:43.398082+00:00",
+  "finished_at": "2026-09-19T22:53:43.588984+00:00",
+  "duration_sec": 0.19,
+  "mode": "failed",
+  "reason": "execution_error",
+  "exit_code": 1,
+  "binary_available": true,
+  "evidence_trustworthy": false,
+  "raw_path": "raw/whatweb_raw.json",
+  "raw_sha256": null,
+  "raw_size_bytes": 0,
+  "finding_count": 0,
+  "warnings": [],
+  "errors": [
+    "/usr/bin/whatweb:257:in `require_relative': cannot load such file -- /usr/bin/lib/messages (LoadError)\n\tfrom /usr/bin/whatweb:257:in `<main>'\n"
+  ]
+}

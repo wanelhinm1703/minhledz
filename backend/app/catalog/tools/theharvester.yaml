@@ -1,0 +1,37 @@
+tool_id: theharvester
+name: theHarvester
+category: network
+binary: theHarvester
+version_command:
+- -h
+docker:
+  image: ai-pentest-tools:latest
+  binary: theHarvester
+target_types:
+- domain
+- hostname
+capabilities:
+- osint_recon
+- subdomain_enumeration
+- email_harvesting
+input_types:
+- domain
+output_formats:
+- json
+- xml
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_theharvester.py
+evidence_directory: toolkit/03-network/scans
+enabled: true
+tags:
+- network
+- osint
+- subdomains
+- recon
+safe_flags:
+- -l
+- '100'
+- -b
+- duckduckgo
+binary_lookup_paths: []

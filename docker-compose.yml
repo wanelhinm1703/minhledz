@@ -1,0 +1,45 @@
+services:
+  # 1. FastAPI Backend & Copilot Brain Service
+  backend:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.backend
+    image: ai-pentest-backend:latest
+    container_name: ai_pentest_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - AI_PENTEST_EXECUTION_MODE=auto
+      - HOST=0.0.0.0
+      - PORT=8000
+    restart: unless-stopped
+
+  # 2. React Web IDE Frontend Service
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.frontend
+    image: ai-pentest-frontend:latest
+    container_name: ai_pentest_frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # 3. Kali Linux Pentest Tools Sandbox Container
+  pentest-tools:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.tools
+    image: ai-pentest-tools:latest
+    container_name: ai_pentest_tools_runner
+    volumes:
+      - ./:/workspace
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    restart: unless-stopped

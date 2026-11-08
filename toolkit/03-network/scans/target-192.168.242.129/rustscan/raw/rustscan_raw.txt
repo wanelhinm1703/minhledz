@@ -1,0 +1,113 @@
+File limit is lower than default batch size. Consider upping with --ulimit. May cause harm to sensitive servers
+Your file limit is very small, which negatively impacts RustScan's speed. Use the Docker image, or up the Ulimit with '--ulimit 5000'. 
+Open 192.168.242.129:21
+Open 192.168.242.129:22
+Open 192.168.242.129:23
+Open 192.168.242.129:25
+Open 192.168.242.129:53
+Open 192.168.242.129:80
+Open 192.168.242.129:111
+Open 192.168.242.129:139
+Open 192.168.242.129:445
+Open 192.168.242.129:512
+Open 192.168.242.129:513
+Open 192.168.242.129:514
+Open 192.168.242.129:1099
+Open 192.168.242.129:1524
+Open 192.168.242.129:2049
+Open 192.168.242.129:2121
+Open 192.168.242.129:3306
+Open 192.168.242.129:3632
+Open 192.168.242.129:5432
+Open 192.168.242.129:5900
+Open 192.168.242.129:6000
+Open 192.168.242.129:6667
+Open 192.168.242.129:6697
+Open 192.168.242.129:8009
+Open 192.168.242.129:8180
+Open 192.168.242.129:8787
+Open 192.168.242.129:39458
+Open 192.168.242.129:51165
+Open 192.168.242.129:52425
+Open 192.168.242.129:59357
+Starting Script(s)
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-09-20 05:53 +0700
+Initiating Ping Scan at 05:53
+Scanning 192.168.242.129 [2 ports]
+Completed Ping Scan at 05:53, 0.00s elapsed (1 total hosts)
+Initiating Parallel DNS resolution of 1 host. at 05:53
+Completed Parallel DNS resolution of 1 host. at 05:53, 0.50s elapsed
+DNS resolution of 1 IPs took 0.50s. Mode: Async [#: 1, OK: 0, NX: 1, DR: 0, SF: 0, TR: 1, CN: 0]
+Initiating Connect Scan at 05:53
+Scanning 192.168.242.129 [30 ports]
+Discovered open port 445/tcp on 192.168.242.129
+Discovered open port 5900/tcp on 192.168.242.129
+Discovered open port 3306/tcp on 192.168.242.129
+Discovered open port 23/tcp on 192.168.242.129
+Discovered open port 21/tcp on 192.168.242.129
+Discovered open port 80/tcp on 192.168.242.129
+Discovered open port 111/tcp on 192.168.242.129
+Discovered open port 25/tcp on 192.168.242.129
+Discovered open port 139/tcp on 192.168.242.129
+Discovered open port 22/tcp on 192.168.242.129
+Discovered open port 53/tcp on 192.168.242.129
+Discovered open port 51165/tcp on 192.168.242.129
+Discovered open port 39458/tcp on 192.168.242.129
+Discovered open port 8009/tcp on 192.168.242.129
+Discovered open port 6697/tcp on 192.168.242.129
+Discovered open port 514/tcp on 192.168.242.129
+Discovered open port 512/tcp on 192.168.242.129
+Discovered open port 2049/tcp on 192.168.242.129
+Discovered open port 6000/tcp on 192.168.242.129
+Discovered open port 513/tcp on 192.168.242.129
+Discovered open port 59357/tcp on 192.168.242.129
+Discovered open port 52425/tcp on 192.168.242.129
+Discovered open port 5432/tcp on 192.168.242.129
+Discovered open port 2121/tcp on 192.168.242.129
+Discovered open port 3632/tcp on 192.168.242.129
+Discovered open port 8787/tcp on 192.168.242.129
+Discovered open port 8180/tcp on 192.168.242.129
+Discovered open port 6667/tcp on 192.168.242.129
+Discovered open port 1099/tcp on 192.168.242.129
+Discovered open port 1524/tcp on 192.168.242.129
+Completed Connect Scan at 05:53, 0.00s elapsed (30 total ports)
+Nmap scan report for 192.168.242.129
+Host is up, received syn-ack (0.00052s latency).
+Scanned at 2026-09-20 05:53:30 +07 for 0s
+
+PORT      STATE SERVICE      REASON
+21/tcp    open  ftp          syn-ack
+22/tcp    open  ssh          syn-ack
+23/tcp    open  telnet       syn-ack
+25/tcp    open  smtp         syn-ack
+53/tcp    open  domain       syn-ack
+80/tcp    open  http         syn-ack
+111/tcp   open  rpcbind      syn-ack
+139/tcp   open  netbios-ssn  syn-ack
+445/tcp   open  microsoft-ds syn-ack
+512/tcp   open  exec         syn-ack
+513/tcp   open  login        syn-ack
+514/tcp   open  shell        syn-ack
+1099/tcp  open  rmiregistry  syn-ack
+1524/tcp  open  ingreslock   syn-ack
+2049/tcp  open  nfs          syn-ack
+2121/tcp  open  ccproxy-ftp  syn-ack
+3306/tcp  open  mysql        syn-ack
+3632/tcp  open  distccd      syn-ack
+5432/tcp  open  postgresql   syn-ack
+5900/tcp  open  vnc          syn-ack
+6000/tcp  open  X11          syn-ack
+6667/tcp  open  irc          syn-ack
+6697/tcp  open  ircs-u       syn-ack
+8009/tcp  open  ajp13        syn-ack
+8180/tcp  open  unknown      syn-ack
+8787/tcp  open  msgsrvr      syn-ack
+39458/tcp open  unknown      syn-ack
+51165/tcp open  unknown      syn-ack
+52425/tcp open  unknown      syn-ack
+59357/tcp open  unknown      syn-ack
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 0.52 seconds
+
+

@@ -1,17 +1,17 @@
 """Comprehensive unit and integration tests for Milestone M5 (Findings Builder & Management)."""
 
-import pytest
 from fastapi.testclient import TestClient
+
 from backend.app.main import app
-from backend.app.storage.findings_db import findings_db
-from backend.app.services.findings_builder import findings_builder
 from backend.app.schemas.finding import (
-    FindingCreate,
-    FindingUpdate,
-    FindingStatus,
-    FindingSeverity,
     EvidenceItem,
+    FindingCreate,
+    FindingSeverity,
+    FindingStatus,
+    FindingUpdate,
 )
+from backend.app.services.findings_builder import findings_builder
+from backend.app.storage.findings_db import findings_db
 
 client = TestClient(app)
 
@@ -48,7 +48,9 @@ def test_create_and_get_finding():
 
 
 def test_update_finding_status():
-    update = FindingUpdate(status=FindingStatus.VERIFIED, remediation="Patched in staging")
+    update = FindingUpdate(
+        status=FindingStatus.VERIFIED, remediation="Patched in staging"
+    )
     updated = findings_db.update_finding("FIND-TEST-001", update)
     assert updated is not None
     assert updated.status == FindingStatus.VERIFIED

@@ -1,13 +1,37 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { Terminal as TerminalIcon, Play, Square, Trash2, Maximize2, Minimize2, Sparkles, Loader2 } from 'lucide-react'
-import { useWorkspaceStore } from '../../store/workspaceStore'
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import {
+  Terminal as TerminalIcon,
+  Play,
+  Square,
+  Trash2,
+  Maximize2,
+  Minimize2,
+  Sparkles,
+  Loader2,
+} from "lucide-react";
+import { useWorkspaceStore } from "../../store/workspaceStore";
 
-export const TerminalPanel: React.FC = () => {
-  const { terminalLogs, clearTerminalLogs, appendTerminalLog, refreshScans, activeTarget } = useWorkspaceStore();
-  const [inputCmd, setInputCmd] = useState('');
+interface TerminalPanelProps {
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+}
+
+export const TerminalPanel: React.FC<TerminalPanelProps> = ({
+  isExpanded: isExpandedProp,
+  onToggleExpand,
+}) => {
+  const {
+    terminalLogs,
+    clearTerminalLogs,
+    appendTerminalLog,
+    refreshScans,
+    activeTarget,
+  } = useWorkspaceStore();
+  const [inputCmd, setInputCmd] = useState("");
   const [isRunning, setIsRunning] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [currentCwd, setCurrentCwd] = useState('~');
+  const [internalExpanded, setInternalExpanded] = useState(false);
+  const isExpanded = isExpandedProp !== undefined ? isExpandedProp : internalExpanded;
+  const [currentCwd, setCurrentCwd] = useState("~");
   const [history, setHistory] = useState<string[]>([]);
   const [historyIdx, setHistoryIdx] = useState<number>(-1);
 
@@ -16,7 +40,7 @@ export const TerminalPanel: React.FC = () => {
   const wsRef = useRef<WebSocket | null>(null);
 
   const scrollToBottom = () => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -25,8 +49,8 @@ export const TerminalPanel: React.FC = () => {
 
   // Setup WebSocket connection for real-time live streaming
   const connectWs = useCallback(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host || 'localhost:8000';
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const host = window.location.host || "localhost:8000";
     const wsUrl = `${protocol}//${host}/ws/terminal`;
 
     const ws = new WebSocket(wsUrl);
@@ -37,30 +61,31 @@ export const TerminalPanel: React.FC = () => {
         const payload = JSON.parse(evt.data);
         const { type, data, code, duration, cwd, message } = payload;
 
-        if (type === 'ready') {
-          if (message) appendTerminalLog(`[*] ${message}`);
+        if (type === "ready") {
           if (cwd) {
-            const rel = cwd.split('ai-pentest-copilot').pop() || '';
-            setCurrentCwd(rel ? `~${rel.replace(/\\/g, '/')}` : '~');
+            const rel = cwd.split("ai-pentest-copilot").pop() || "";
+            setCurrentCwd(rel ? `~${rel.replace(/\\/g, "/")}` : "~");
           }
-        } else if (type === 'stdout') {
+        } else if (type === "stdout") {
           appendTerminalLog(data);
-        } else if (type === 'stderr') {
+        } else if (type === "stderr") {
           appendTerminalLog(`[!] ${data}`);
-        } else if (type === 'clear') {
+        } else if (type === "clear") {
           clearTerminalLogs();
-        } else if (type === 'exit') {
+        } else if (type === "exit") {
           setIsRunning(false);
-          appendTerminalLog(`[*] Exit code: ${code} (completed in ${duration}s)`);
+          appendTerminalLog(
+            `[*] Exit code: ${code} (completed in ${duration}s)`,
+          );
           if (cwd) {
-            const rel = cwd.split('ai-pentest-copilot').pop() || '';
-            setCurrentCwd(rel ? `~${rel.replace(/\\/g, '/')}` : '~');
+            const rel = cwd.split("ai-pentest-copilot").pop() || "";
+            setCurrentCwd(rel ? `~${rel.replace(/\\/g, "/")}` : "~");
           }
           refreshScans();
           inputRef.current?.focus();
         }
       } catch (err) {
-        console.error('Terminal WS error', err);
+        console.error("Terminal WS error", err);
       }
     };
 
@@ -77,34 +102,43 @@ export const TerminalPanel: React.FC = () => {
   }, [connectWs]);
 
   // Determine current active target host for presets
-  const rawHost = activeTarget?.host || activeTarget?.normalized_value || activeTarget?.name || '192.168.100.153';
-  const cleanHost = rawHost.replace('http://', '').replace('https://', '').replace('/', '').split(':')[0];
+  const rawHost =
+    activeTarget?.host ||
+    activeTarget?.normalized_value ||
+    activeTarget?.name ||
+    "192.168.100.153";
+  const cleanHost = rawHost
+    .replace("http://", "")
+    .replace("https://", "")
+    .replace("target-", "")
+    .replace("/", "")
+    .split(":")[0];
 
   const presets = [
     {
-      id: 'pipeline',
-      label: '🚀 Full Pipeline',
+      id: "pipeline",
+      label: "🚀 Full Pipeline",
       cmd: `python toolkit/scripts/pipeline_runner.py --target ${cleanHost}`,
     },
     {
-      id: 'nmap',
-      label: '🔍 Nmap Scan',
+      id: "nmap",
+      label: "🔍 Nmap Scan",
       cmd: `python toolkit/scripts/run_nmap.py --target ${cleanHost} --output-dir toolkit/03-network/scans/target-${cleanHost}/nmap`,
     },
     {
-      id: 'naabu',
-      label: '⚡ Naabu Fast Port',
+      id: "naabu",
+      label: "⚡ Naabu Fast Port",
       cmd: `python toolkit/scripts/run_naabu.py --target ${cleanHost} --output-dir toolkit/03-network/scans/target-${cleanHost}/naabu`,
     },
     {
-      id: 'httpx',
-      label: '🌐 HTTPx Web Probe',
+      id: "httpx",
+      label: "🌐 HTTPx Web Probe",
       cmd: `python toolkit/scripts/run_httpx.py --target http://${cleanHost} --output-dir toolkit/04-web/scans/target-${cleanHost}/httpx`,
     },
     {
-      id: 'ping',
-      label: '📡 Ping Probe',
-      cmd: `ping -n 4 ${cleanHost}`,
+      id: "ping",
+      label: "📡 Ping Probe",
+      cmd: `ping -c 4 ${cleanHost}`,
     },
   ];
 
@@ -113,49 +147,51 @@ export const TerminalPanel: React.FC = () => {
     if (!command || isRunning) return;
 
     // Handle clear screen locally
-    if (command.toLowerCase() === 'clear' || command.toLowerCase() === 'cls') {
+    if (command.toLowerCase() === "clear" || command.toLowerCase() === "cls") {
       clearTerminalLogs();
-      setInputCmd('');
+      setInputCmd("");
       return;
     }
 
     setHistory((prev) => [command, ...prev]);
     setHistoryIdx(-1);
-    setInputCmd('');
+    setInputCmd("");
     setIsRunning(true);
 
     appendTerminalLog(`$ ${command}`);
 
     // Send via WebSocket for live streaming if connected
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'execute', command }));
+      wsRef.current.send(JSON.stringify({ type: "execute", command }));
     } else {
       // Reconnect WS or execute via REST
-      fetch('/api/terminal/execute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      fetch("/api/terminal/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ command }),
       })
         .then((res) => res.json())
         .then((data) => {
-          if (data.status === 'clear') {
+          if (data.status === "clear") {
             clearTerminalLogs();
             return;
           }
           if (data.stdout) {
-            data.stdout.split('\n').forEach((l: string) => {
+            data.stdout.split("\n").forEach((l: string) => {
               if (l.trim()) appendTerminalLog(l);
             });
           }
           if (data.stderr) {
-            data.stderr.split('\n').forEach((l: string) => {
+            data.stderr.split("\n").forEach((l: string) => {
               if (l.trim()) appendTerminalLog(`[!] ${l}`);
             });
           }
-          appendTerminalLog(`[*] Exit code: ${data.exit_code} (${data.duration_seconds}s)`);
+          appendTerminalLog(
+            `[*] Exit code: ${data.exit_code} (${data.duration_seconds}s)`,
+          );
           if (data.cwd) {
-            const rel = data.cwd.split('ai-pentest-copilot').pop() || '';
-            setCurrentCwd(rel ? `~${rel.replace(/\\/g, '/')}` : '~');
+            const rel = data.cwd.split("ai-pentest-copilot").pop() || "";
+            setCurrentCwd(rel ? `~${rel.replace(/\\/g, "/")}` : "~");
           }
           refreshScans();
         })
@@ -171,23 +207,23 @@ export const TerminalPanel: React.FC = () => {
 
   const handleKillProcess = () => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'kill' }));
+      wsRef.current.send(JSON.stringify({ type: "kill" }));
     }
     setIsRunning(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleRunCommand();
-    } else if (e.key === 'ArrowUp') {
+    } else if (e.key === "ArrowUp") {
       e.preventDefault();
       if (history.length > 0 && historyIdx < history.length - 1) {
         const nextIdx = historyIdx + 1;
         setHistoryIdx(nextIdx);
         setInputCmd(history[nextIdx]);
       }
-    } else if (e.key === 'ArrowDown') {
+    } else if (e.key === "ArrowDown") {
       e.preventDefault();
       if (historyIdx > 0) {
         const nextIdx = historyIdx - 1;
@@ -195,18 +231,15 @@ export const TerminalPanel: React.FC = () => {
         setInputCmd(history[nextIdx]);
       } else if (historyIdx === 0) {
         setHistoryIdx(-1);
-        setInputCmd('');
+        setInputCmd("");
       }
     }
   };
 
   return (
-    <div
-      className={`${isExpanded ? 'h-80' : 'h-48'
-        } bg-[#101012] border-t border-[#27272a] flex flex-col font-mono text-xs select-none transition-all duration-200`}
-    >
+    <div className="h-full w-full bg-[#070a10] flex flex-col font-mono text-xs select-none">
       {/* Header Bar */}
-      <div className="h-7 bg-[#141416] border-b border-[#27272a] px-3 flex items-center justify-between text-zinc-400">
+      <div className="h-8 bg-[#0c101c] border-b border-[#1e293b] px-3 flex items-center justify-between text-zinc-400">
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-1.5">
             <TerminalIcon className="w-3.5 h-3.5 text-cyan-400" />
@@ -215,8 +248,8 @@ export const TerminalPanel: React.FC = () => {
             </span>
           </div>
           {activeTarget && (
-            <span className="text-[10px] text-zinc-500 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
-              target: <span className="text-emerald-400">{cleanHost}</span>
+            <span className="text-[10px] text-zinc-400 bg-[#121829] px-2 py-0.5 rounded-md border border-[#1e293b] font-mono">
+              target: <span className="text-emerald-400 font-semibold">{cleanHost}</span>
             </span>
           )}
         </div>
@@ -237,7 +270,7 @@ export const TerminalPanel: React.FC = () => {
                   inputRef.current?.focus();
                 }}
                 title={p.cmd}
-                className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-cyan-300 border border-zinc-800 transition"
+                className="text-[10px] px-2 py-0.5 rounded-md bg-[#121829] hover:bg-[#1c253d] text-zinc-300 hover:text-cyan-300 border border-[#1e293b] transition-colors"
               >
                 {p.label}
               </button>
@@ -247,42 +280,52 @@ export const TerminalPanel: React.FC = () => {
           <button
             onClick={clearTerminalLogs}
             title="Xóa màn hình terminal"
-            className="p-1 hover:text-zinc-200 hover:bg-zinc-800 rounded transition"
+            className="p-1 hover:text-zinc-200 hover:bg-[#151c2e] rounded transition text-zinc-400"
           >
-            <Trash2 className="w-3 h-3" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
 
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            title={isExpanded ? 'Thu nhỏ terminal' : 'Phóng to terminal'}
-            className="p-1 hover:text-zinc-200 hover:bg-zinc-800 rounded transition"
+            onClick={() => {
+              if (onToggleExpand) {
+                onToggleExpand();
+              } else {
+                setInternalExpanded(!internalExpanded);
+              }
+            }}
+            title={isExpanded ? "Thu nhỏ terminal" : "Phóng to terminal"}
+            className="p-1 hover:text-zinc-200 hover:bg-[#151c2e] rounded transition text-zinc-400"
           >
-            {isExpanded ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
+            {isExpanded ? (
+              <Minimize2 className="w-3.5 h-3.5" />
+            ) : (
+              <Maximize2 className="w-3.5 h-3.5" />
+            )}
           </button>
         </div>
       </div>
 
       {/* Output Console Stream */}
-      <div className="flex-1 p-2.5 overflow-y-auto space-y-0.5 text-zinc-300 font-mono text-[11px] leading-relaxed">
+      <div className="flex-1 p-3 overflow-y-auto space-y-0.5 text-zinc-200 font-mono text-[11.5px] leading-relaxed selection:bg-cyan-500/30 bg-[#070a10]">
         {terminalLogs.map((log, i) => (
           <div key={i} className="break-all whitespace-pre-wrap">
-            {log.startsWith('$ ') ? (
+            {log.startsWith("$ ") ? (
               <span className="text-cyan-300 font-bold">{log}</span>
-            ) : log.startsWith('[+]') ? (
-              <span className="text-emerald-400">{log}</span>
-            ) : log.startsWith('[!]') ? (
-              <span className="text-red-400">{log}</span>
-            ) : log.startsWith('[*]') ? (
-              <span className="text-cyan-400">{log}</span>
+            ) : log.startsWith("[+]") ? (
+              <span className="text-emerald-400 font-medium">{log}</span>
+            ) : log.startsWith("[!]") ? (
+              <span className="text-rose-400 font-medium">{log}</span>
+            ) : log.startsWith("[*]") ? (
+              <span className="text-cyan-400 font-medium">{log}</span>
             ) : (
-              <span className="text-zinc-400">{log}</span>
+              <span className="text-zinc-300">{log}</span>
             )}
           </div>
         ))}
         {isRunning && (
           <div className="flex items-center space-x-2 text-cyan-400 text-[11px] py-1">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            <span>Đang thực thi lệnh trên host...</span>
+            <span>Đang thực thi lệnh thực tế trên host...</span>
           </div>
         )}
         <div ref={logsEndRef} />
@@ -294,12 +337,12 @@ export const TerminalPanel: React.FC = () => {
           e.preventDefault();
           handleRunCommand();
         }}
-        className="h-8 bg-[#141416] border-t border-[#27272a] px-2 flex items-center space-x-2"
+        className="h-8.5 bg-[#0c101c] border-t border-[#1e293b] px-3 flex items-center space-x-2"
       >
-        <span className="text-cyan-400 font-bold text-[11px] select-none flex items-center space-x-1 flex-shrink-0">
-          <span className="text-emerald-400">copilot@pentest</span>
+        <span className="font-bold text-[11px] select-none flex items-center space-x-1 flex-shrink-0 font-mono">
+          <span className="text-emerald-400">kali@copilot</span>
           <span className="text-zinc-500">:</span>
-          <span className="text-cyan-300">{currentCwd}</span>
+          <span className="text-cyan-400">{currentCwd}</span>
           <span className="text-zinc-400">$</span>
         </span>
         <input
@@ -309,19 +352,15 @@ export const TerminalPanel: React.FC = () => {
           disabled={isRunning}
           onChange={(e) => setInputCmd(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={
-            isRunning
-              ? 'Lệnh đang chạy (bấm Dừng hoặc Ctrl+C để hủy)...'
-              : `Nhập lệnh thực thi (ví dụ: ls -la, ping ${cleanHost}, python toolkit/scripts/run_naabu.py...)...`
-          }
-          className="flex-1 bg-transparent border-none text-zinc-100 placeholder-zinc-600 focus:outline-none text-[11px] font-mono disabled:opacity-50"
+          placeholder={isRunning ? "Đang thực thi lệnh..." : ""}
+          className="flex-1 bg-transparent border-none text-zinc-100 placeholder-zinc-600 focus:outline-none text-[11.5px] font-mono disabled:opacity-50"
         />
         {isRunning ? (
           <button
             type="button"
             onClick={handleKillProcess}
             title="Dừng tiến trình đang chạy (Ctrl+C)"
-            className="px-2 py-0.5 bg-red-600 hover:bg-red-500 text-white rounded text-[10px] flex items-center space-x-1 transition"
+            className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-md text-[10px] flex items-center space-x-1 transition shadow-sm font-semibold"
           >
             <Square className="w-2.5 h-2.5 fill-white" />
             <span>Dừng</span>
@@ -331,7 +370,7 @@ export const TerminalPanel: React.FC = () => {
             type="submit"
             disabled={!inputCmd.trim()}
             title="Thực thi lệnh (Enter)"
-            className="px-2 py-0.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white rounded text-[10px] flex items-center space-x-1 transition"
+            className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white rounded-md text-[10px] flex items-center space-x-1 transition shadow-sm font-semibold"
           >
             <Play className="w-2.5 h-2.5" />
             <span>Chạy</span>

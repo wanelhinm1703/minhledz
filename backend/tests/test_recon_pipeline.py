@@ -1,17 +1,14 @@
 import pathlib
+
 import pytest
-from backend.app.schemas.target import TargetType
-from backend.app.services.target_parser import TargetParser
-from backend.app.services.target_normalizer import TargetNormalizer
-from backend.app.services.recon_planner import ReconPlanner
-from backend.app.services.target_registry import TargetRegistry
-from toolkit.scripts.run_naabu import run_naabu_scan
-from toolkit.scripts.run_httpx import run_httpx_scan
+
+from backend.app.services.scope_validator import ScopeViolation
 from toolkit.scripts.parse_httpx import HttpxParser
-from toolkit.scripts.run_nuclei import run_nuclei_scan
 from toolkit.scripts.parse_nuclei import NucleiParser
 from toolkit.scripts.pipeline_runner import run_pipeline
-from backend.app.services.scope_validator import ScopeViolation
+from toolkit.scripts.run_httpx import run_httpx_scan
+from toolkit.scripts.run_naabu import run_naabu_scan
+from toolkit.scripts.run_nuclei import run_nuclei_scan
 
 
 def test_naabu_scan_simulation(tmp_path):
@@ -43,7 +40,12 @@ def test_httpx_scan_and_parse(tmp_path):
     assert res["exit_code"] == 0
     assert pathlib.Path(res["raw_path"]).exists()
 
-    schema_file = pathlib.Path(__file__).resolve().parent.parent.parent / "security" / "schemas" / "httpx_result.schema.json"
+    schema_file = (
+        pathlib.Path(__file__).resolve().parent.parent.parent
+        / "security"
+        / "schemas"
+        / "httpx_result.schema.json"
+    )
     parsed = HttpxParser.parse_raw_jsonl(
         jsonl_path=pathlib.Path(res["raw_path"]),
         scan_metadata=res,
@@ -68,7 +70,12 @@ def test_nuclei_scan_and_parse(tmp_path):
     assert res["exit_code"] == 0
     assert pathlib.Path(res["raw_path"]).exists()
 
-    schema_file = pathlib.Path(__file__).resolve().parent.parent.parent / "security" / "schemas" / "nuclei_finding.schema.json"
+    schema_file = (
+        pathlib.Path(__file__).resolve().parent.parent.parent
+        / "security"
+        / "schemas"
+        / "nuclei_finding.schema.json"
+    )
     parsed = NucleiParser.parse_raw_jsonl(
         jsonl_path=pathlib.Path(res["raw_path"]),
         scan_metadata=res,
@@ -76,7 +83,9 @@ def test_nuclei_scan_and_parse(tmp_path):
     )
     assert parsed["scan_metadata"]["tool"] == "nuclei"
     assert len(parsed["findings"]) >= 1
-    cve_finding = next(f for f in parsed["findings"] if f["template_id"] == "CVE-2021-41773")
+    cve_finding = next(
+        f for f in parsed["findings"] if f["template_id"] == "CVE-2021-41773"
+    )
     assert cve_finding["info"]["severity"] == "high"
     assert "CWE-22" in cve_finding["info"]["cwe_id"]
 

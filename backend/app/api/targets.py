@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import pathlib
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException
+
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from backend.app.schemas.target import Target, TargetStatus
-from backend.app.services.target_parser import TargetParser
-from backend.app.services.target_normalizer import TargetNormalizer
-from backend.app.services.target_validator import TargetValidator
-from backend.app.services.scope_validator import ScopeValidator
 from backend.app.services.recon_planner import ReconPlanner
+from backend.app.services.scope_validator import ScopeValidator
+from backend.app.services.target_normalizer import TargetNormalizer
+from backend.app.services.target_parser import TargetParser
 from backend.app.services.target_registry import TargetRegistry
+from backend.app.services.target_validator import TargetValidator
+from backend.app.services.tool_registry import tool_registry
 
 router = APIRouter(prefix="/targets", tags=["targets"])
 
@@ -29,22 +30,23 @@ class DetectResponse(BaseModel):
     target_type: str
     normalized_value: str
     host: str
-    port: Optional[int] = None
-    scheme: Optional[str] = None
+    port: int | None = None
+    scheme: str | None = None
     is_valid: bool
-    syntax_errors: List[str] = Field(default_factory=list)
+    syntax_errors: list[str] = Field(default_factory=list)
     scope: dict
-    recommended_tools: List[str] = Field(default_factory=list)
+    recommended_tools: list[str] = Field(default_factory=list)
+    compatible_tools: list[str] = Field(default_factory=list)
 
 
 class CreateTargetRequest(BaseModel):
     raw_input: str
     campaign_id: str = "lab-local"
-    name: Optional[str] = None
+    name: str | None = None
     environment: str = "lab"
 
 
-@router.get("", response_model=List[Target])
+@router.get("", response_model=list[Target])
 def list_targets():
     return registry.list_all()
 
@@ -55,6 +57,36 @@ def get_target(target_id: str):
     if not target:
         raise HTTPException(status_code=404, detail=f"Target '{target_id}' not found.")
     return target
+
+
+from backend.app.services.target_service_discovery import discover_target_services
+
+
+@router.get("/{target_id}/services")
+def get_target_services(target_id: str):
+    """Retrieve discovered open ports, services, and software versions for a target."""
+    services = discover_target_services(target_id)
+    return {
+        "target_id": target_id,
+        "total": len(services),
+        "services": services,
+    }
+
+
+@router.get("/{target_id}/correlate")
+def correlate_target_endpoint(
+    target_id: str,
+    mode: str | None = Query("dual", description="Threat intel mode: 'dual', 'offline', 'online'"),
+    limit_per_service: int = Query(15, ge=1, le=50),
+):
+    """Retrieve correlated CVE vulnerabilities across all services for a target."""
+    from backend.app.api.vulnerabilities import correlate_target_recon_services
+
+    return correlate_target_recon_services(
+        target_id=target_id, mode=mode, limit_per_service=limit_per_service
+    )
+
+
 
 
 @router.post("/detect", response_model=DetectResponse)
@@ -73,9 +105,10 @@ def detect_target(req: DetectRequest):
         campaign_id=req.campaign_id,
     )
     decision = scope_validator.validate(temp_target)
-    
+
     plan = ReconPlanner.plan(temp_target)
     tools = [s.tool for s in plan.steps]
+    compatible = tool_registry.list_compatible_tool_ids(parsed.target_type.value)
 
     return DetectResponse(
         raw_input=req.input,
@@ -92,6 +125,7 @@ def detect_target(req: DetectRequest):
             "matched_rule": decision.matched_rule,
         },
         recommended_tools=tools,
+        compatible_tools=compatible,
     )
 
 
@@ -126,4 +160,3 @@ def delete_target(target_id: str):
         raise HTTPException(status_code=404, detail=f"Target '{target_id}' not found.")
     chat_db.delete_target_conversations(target_id)
     return {"status": "deleted", "target_id": target_id}
-

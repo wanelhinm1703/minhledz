@@ -1,25 +1,24 @@
 import pathlib
-import pytest
 
-from toolkit.scripts.run_masscan import run_masscan_scan
-from toolkit.scripts.parse_masscan import MasscanParser
-from toolkit.scripts.run_rustscan import run_rustscan_scan
-from toolkit.scripts.parse_rustscan import RustscanParser
-from toolkit.scripts.run_whatweb import run_whatweb_scan
-from toolkit.scripts.parse_whatweb import WhatwebParser
-from toolkit.scripts.run_nikto import run_nikto_scan
-from toolkit.scripts.parse_nikto import NiktoParser
-from toolkit.scripts.run_gobuster import run_gobuster_scan
-from toolkit.scripts.parse_gobuster import GobusterParser
-from toolkit.scripts.run_ffuf import run_ffuf_scan
 from toolkit.scripts.parse_ffuf import FfufParser
-from toolkit.scripts.run_katana import run_katana_scan
+from toolkit.scripts.parse_gobuster import GobusterParser
 from toolkit.scripts.parse_katana import KatanaParser
-from toolkit.scripts.run_searchsploit import run_searchsploit_lookup
+from toolkit.scripts.parse_masscan import MasscanParser
+from toolkit.scripts.parse_nikto import NiktoParser
+from toolkit.scripts.parse_rustscan import RustscanParser
 from toolkit.scripts.parse_searchsploit import SearchsploitParser
-from toolkit.scripts.run_service_enum import run_service_enum_scan
 from toolkit.scripts.parse_service_enum import ServiceEnumParser
+from toolkit.scripts.parse_whatweb import WhatwebParser
+from toolkit.scripts.run_ffuf import run_ffuf_scan
+from toolkit.scripts.run_gobuster import run_gobuster_scan
+from toolkit.scripts.run_katana import run_katana_scan
+from toolkit.scripts.run_masscan import run_masscan_scan
+from toolkit.scripts.run_nikto import run_nikto_scan
 from toolkit.scripts.run_proxy_manual import run_proxy_manual_workflow
+from toolkit.scripts.run_rustscan import run_rustscan_scan
+from toolkit.scripts.run_searchsploit import run_searchsploit_lookup
+from toolkit.scripts.run_service_enum import run_service_enum_scan
+from toolkit.scripts.run_whatweb import run_whatweb_scan
 
 ROOT_DIR = pathlib.Path(__file__).resolve().parent.parent.parent
 SCHEMAS_DIR = ROOT_DIR / "security" / "schemas"
@@ -235,13 +234,15 @@ def test_proxy_manual_workflow(tmp_path):
 
 def test_missing_binary_safe_failure(tmp_path, monkeypatch):
     """Section 37 requirement: when a tool is not installed, no fake output is produced in production execution."""
+    import shutil
     monkeypatch.delenv("SIMULATE_SCANS", raising=False)
+    monkeypatch.setattr(shutil, "which", lambda cmd: None)
     res = run_masscan_scan(
         target_id="test-no-fake",
         target_host="127.0.0.1",
         output_dir=tmp_path / "masscan_fail",
         simulate=False,
     )
-    # Masscan is not installed in the system PATH
+    # When binary is missing, returns non-zero and error
     assert res["exit_code"] != 0
     assert "not installed" in (res.get("error") or "")

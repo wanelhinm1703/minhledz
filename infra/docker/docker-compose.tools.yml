@@ -1,0 +1,14 @@
+services:
+  pentest-tools:
+    build:
+      context: ../../
+      dockerfile: infra/docker/Dockerfile.tools
+    image: ai-pentest-tools:latest
+    container_name: ai_pentest_tools_runner
+    volumes:
+      - ../../:/workspace
+    working_dir: /workspace
+    network_mode: bridge
+    stdin_open: true
+    tty: true
+    restart: unless-stopped

@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
 import pathlib
-import sys
+from datetime import datetime, timezone
+
 import jsonschema
 
 
@@ -41,15 +41,21 @@ class KatanaParser:
                     try:
                         record = json.loads(line)
                         req = record.get("request", {})
-                        ep = req.get("endpoint") or record.get("endpoint") or record.get("url")
+                        ep = (
+                            req.get("endpoint")
+                            or record.get("endpoint")
+                            or record.get("url")
+                        )
                         if ep:
-                            endpoints.append({
-                                "endpoint": str(ep),
-                                "method": str(req.get("method", "GET")),
-                                "source": str(record.get("source", "crawler")),
-                                "tag": str(req.get("tag", "a")),
-                                "attribute": str(req.get("attribute", "href")),
-                            })
+                            endpoints.append(
+                                {
+                                    "endpoint": str(ep),
+                                    "method": str(req.get("method", "GET")),
+                                    "source": str(record.get("source", "crawler")),
+                                    "tag": str(req.get("tag", "a")),
+                                    "attribute": str(req.get("attribute", "href")),
+                                }
+                            )
                     except Exception:
                         pass
         except Exception:
@@ -68,9 +74,13 @@ class KatanaParser:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Parse Katana JSONL to Structured JSON")
+    parser = argparse.ArgumentParser(
+        description="Parse Katana JSONL to Structured JSON"
+    )
     parser.add_argument("--jsonl", required=True, help="Path to raw katana_raw.jsonl")
-    parser.add_argument("--output", required=True, help="Path to output structured json")
+    parser.add_argument(
+        "--output", required=True, help="Path to output structured json"
+    )
     parser.add_argument("--schema", help="Path to katana_result.schema.json")
     args = parser.parse_args()
 

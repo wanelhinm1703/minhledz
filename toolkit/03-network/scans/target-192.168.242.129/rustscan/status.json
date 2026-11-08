@@ -1,0 +1,19 @@
+{
+  "tool": "rustscan",
+  "target_id": "target-192.168.242.129",
+  "target_url": "http://192.168.242.129",
+  "started_at": "2026-09-19T22:53:27.428946+00:00",
+  "finished_at": "2026-09-19T22:53:30.397380+00:00",
+  "duration_sec": 2.97,
+  "mode": "real",
+  "reason": null,
+  "exit_code": 0,
+  "binary_available": true,
+  "evidence_trustworthy": true,
+  "raw_path": "raw/rustscan_raw.txt",
+  "raw_sha256": "3b538133470b9850a906bf47177b9c776d33e76439c7193d6b6ab890d4dce852",
+  "raw_size_bytes": 4417,
+  "finding_count": 30,
+  "warnings": [],
+  "errors": []
+}

@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
 import pathlib
-import sys
+from datetime import datetime, timezone
+
 import jsonschema
 
 
@@ -47,14 +47,16 @@ class NiktoParser:
                 banner = raw_data.get("banner", "")
 
                 for item in raw_data.get("items", []):
-                    items.append({
-                        "id": str(item.get("id", "0")),
-                        "osvdb": str(item.get("osvdb", "0")),
-                        "method": item.get("method", "GET"),
-                        "uri": item.get("uri", "/"),
-                        "description": item.get("description", ""),
-                        "severity": item.get("severity", "low"),
-                    })
+                    items.append(
+                        {
+                            "id": str(item.get("id", "0")),
+                            "osvdb": str(item.get("osvdb", "0")),
+                            "method": item.get("method", "GET"),
+                            "uri": item.get("uri", "/"),
+                            "description": item.get("description", ""),
+                            "severity": item.get("severity", "low"),
+                        }
+                    )
         except Exception:
             pass
 
@@ -77,7 +79,9 @@ class NiktoParser:
 def main():
     parser = argparse.ArgumentParser(description="Parse Nikto JSON to Structured JSON")
     parser.add_argument("--json", required=True, help="Path to raw nikto_raw.json")
-    parser.add_argument("--output", required=True, help="Path to output structured json")
+    parser.add_argument(
+        "--output", required=True, help="Path to output structured json"
+    )
     parser.add_argument("--schema", help="Path to nikto_result.schema.json")
     args = parser.parse_args()
 

@@ -1,0 +1,36 @@
+tool_id: ldapsearch
+name: ldapsearch
+category: service_enum
+binary: ldapsearch
+version_command:
+- -VV
+docker:
+  image: ai-pentest-tools:latest
+  binary: ldapsearch
+target_types:
+- ipv4
+- domain
+- hostname
+capabilities:
+- ldap_query
+- directory_enumeration
+input_types:
+- ip
+- hostname
+output_formats:
+- raw
+- json
+risk_level: safe
+requires_user_confirmation: false
+parser: parse_service_enum.py
+evidence_directory: toolkit/06-service-enum/scans
+enabled: true
+tags:
+- service-enum
+- ldap
+- active-directory
+safe_flags:
+- -x
+- -s
+- base
+binary_lookup_paths: []

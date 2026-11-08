@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
 import pathlib
-import sys
+from datetime import datetime, timezone
+
 import jsonschema
 
 
@@ -44,13 +44,15 @@ class MasscanParser:
                     if ip not in hosts_dict:
                         hosts_dict[ip] = []
                     for port_info in entry.get("ports", []):
-                        hosts_dict[ip].append({
-                            "port": int(port_info.get("port", 0)),
-                            "proto": port_info.get("proto", "tcp"),
-                            "status": port_info.get("status", "open"),
-                            "reason": port_info.get("reason", "syn-ack"),
-                            "ttl": int(port_info.get("ttl", 64)),
-                        })
+                        hosts_dict[ip].append(
+                            {
+                                "port": int(port_info.get("port", 0)),
+                                "proto": port_info.get("proto", "tcp"),
+                                "status": port_info.get("status", "open"),
+                                "reason": port_info.get("reason", "syn-ack"),
+                                "ttl": int(port_info.get("ttl", 64)),
+                            }
+                        )
         except Exception:
             pass
 
@@ -69,9 +71,13 @@ class MasscanParser:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Parse Masscan JSON to Structured JSON")
+    parser = argparse.ArgumentParser(
+        description="Parse Masscan JSON to Structured JSON"
+    )
     parser.add_argument("--json", required=True, help="Path to raw masscan_raw.json")
-    parser.add_argument("--output", required=True, help="Path to output structured json")
+    parser.add_argument(
+        "--output", required=True, help="Path to output structured json"
+    )
     parser.add_argument("--schema", help="Path to masscan_result.schema.json")
     args = parser.parse_args()
 

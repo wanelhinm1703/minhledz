@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Security Finding",
+  "description": "Standard schema for pentest finding with evidence chain",
+  "type": "object",
+  "required": [
+    "target_id",
+    "title",
+    "affected_asset",
+    "description",
+    "cvss_severity",
+    "status"
+  ],
+  "properties": {
+    "finding_id": {
+      "type": "string"
+    },
+    "target_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "cve_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cwe_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cvss_score": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 10.0
+    },
+    "cvss_severity": {
+      "type": "string",
+      "enum": [
+        "CRITICAL",
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "INFO"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "CANDIDATE",
+        "UNVERIFIED",
+        "VERIFIED",
+        "FALSE_POSITIVE",
+        "RESOLVED"
+      ]
+    },
+    "affected_asset": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "remediation": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "evidence_chain": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "tool",
+          "file_path",
+          "matched_text"
+        ],
+        "properties": {
+          "tool": {
+            "type": "string"
+          },
+          "file_path": {
+            "type": "string"
+          },
+          "matched_text": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "trustworthy": {
+            "type": "boolean"
+          },
+          "is_simulated": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "trustworthy": {
+      "type": "boolean"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    }
+  },
+  "additionalProperties": true
+}

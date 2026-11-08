@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CVE Knowledge Base Entry",
+  "description": "Standard schema for Common Vulnerabilities and Exposures (CVE) record",
+  "type": "object",
+  "required": [
+    "cve_id",
+    "description",
+    "source_url",
+    "source_name",
+    "ingested_at"
+  ],
+  "properties": {
+    "cve_id": {
+      "type": "string",
+      "pattern": "^CVE-[0-9]{4}-[0-9]{4,}$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "published": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "last_modified": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cvss_v3_score": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0.0,
+      "maximum": 10.0
+    },
+    "cvss_v3_vector": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cvss_v3_severity": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "CRITICAL",
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "NONE",
+        null
+      ]
+    },
+    "cvss_v4_score": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0.0,
+      "maximum": 10.0
+    },
+    "cvss_v4_vector": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cwe_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^CWE-[0-9]+$"
+      }
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "source_name": {
+      "type": "string",
+      "default": "National Vulnerability Database (NVD)"
+    },
+    "ingested_at": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

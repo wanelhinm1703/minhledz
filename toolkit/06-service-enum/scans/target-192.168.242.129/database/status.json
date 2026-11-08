@@ -1,0 +1,21 @@
+{
+  "tool": "database",
+  "target_id": "target-192.168.242.129",
+  "target_url": "http://192.168.242.129:",
+  "started_at": "2026-09-19T22:53:44.390070+00:00",
+  "finished_at": "2026-09-19T22:53:44.390076+00:00",
+  "duration_sec": 0.0,
+  "mode": "failed",
+  "reason": "binary_not_found",
+  "exit_code": 127,
+  "binary_available": false,
+  "evidence_trustworthy": false,
+  "raw_path": null,
+  "raw_sha256": null,
+  "raw_size_bytes": 0,
+  "finding_count": 0,
+  "warnings": [],
+  "errors": [
+    "mysql binary is not installed in the current environment. Please install mysql."
+  ]
+}

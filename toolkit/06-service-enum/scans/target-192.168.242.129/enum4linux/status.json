@@ -1,0 +1,21 @@
+{
+  "tool": "enum4linux",
+  "target_id": "target-192.168.242.129",
+  "target_url": "http://192.168.242.129:",
+  "started_at": "2026-09-19T22:53:44.259409+00:00",
+  "finished_at": "2026-09-19T22:53:44.359551+00:00",
+  "duration_sec": 0.1,
+  "mode": "failed",
+  "reason": "execution_error",
+  "exit_code": 1,
+  "binary_available": true,
+  "evidence_trustworthy": false,
+  "raw_path": "raw/enum4linux_raw.txt",
+  "raw_sha256": "a7555ae600057b18616a92ddc5d042c8b9517005ddcb954b99ef1134b5678660",
+  "raw_size_bytes": 1810,
+  "finding_count": 0,
+  "warnings": [],
+  "errors": [
+    "\"my\" variable $which_output masks earlier declaration in same scope at /usr/local/bin/enum4linux line 280.\n"
+  ]
+}

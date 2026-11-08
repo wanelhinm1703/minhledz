@@ -1,0 +1,112 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "AI-Pentest Copilot",
+          "semanticVersion": "5.0.0",
+          "informationUri": "https://github.com/ai-pentest-copilot",
+          "rules": [
+            {
+              "id": "CVE-2023-9999",
+              "name": "Exposed_Database_Management_Interface",
+              "shortDescription": {
+                "text": "Exposed Database Management Interface"
+              },
+              "fullDescription": {
+                "text": "PostgreSQL port open without network ACL restriction."
+              },
+              "helpUri": "https://nvd.nist.gov/vuln/detail/CVE-2023-9999",
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "pentest-finding",
+                  "cvss-high",
+                  "owasp-a01:2021"
+                ],
+                "security-severity": "8.5",
+                "cwe": [
+                  "CWE-284"
+                ],
+                "owasp": "A01:2021",
+                "nist_sp_800_115": "NIST SP 800-115 \u00a74.3",
+                "cis_control": "CIS Control 4.1"
+              },
+              "help": {
+                "text": "Remediation:\nBind PostgreSQL to localhost or private VPC subnet.",
+                "markdown": "### Remediation Guidance\nBind PostgreSQL to localhost or private VPC subnet."
+              }
+            }
+          ]
+        }
+      },
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "endTimeUtc": "2026-09-19T23:44:43Z"
+        }
+      ],
+      "results": [
+        {
+          "ruleId": "CVE-2023-9999",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Exposed Database Management Interface\n\nAffected Asset: test-target-pillar4-auto:5432\nCVSS Score: 8.5 (HIGH)\n\nPostgreSQL port open without network ACL restriction."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "target://test-target-pillar4-auto:5432",
+                  "uriBaseId": "%SRCROOT%"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "name": "test-target-pillar4-auto:5432",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "target_id": "test-target-pillar4-auto",
+            "cvssScore": 8.5,
+            "cvssSeverity": "HIGH",
+            "remediation": "Bind PostgreSQL to localhost or private VPC subnet.",
+            "trustworthy": true,
+            "is_simulated": false,
+            "compliance": {
+              "cwe_id": "CWE-284",
+              "cve_id": "CVE-2023-9999",
+              "owasp": {
+                "id": "A01:2021",
+                "name": "Broken Access Control",
+                "desc": "Improper Access Control"
+              },
+              "cwe_top_25": {
+                "is_top_25": false,
+                "rank": null,
+                "details": null
+              },
+              "nist_sp_800_115": {
+                "section": "NIST SP 800-115 \u00a74.3",
+                "title": "Vulnerability Identification and Verification"
+              },
+              "cis_controls": {
+                "control": "CIS Control 4.1",
+                "title": "Establish and Maintain a Secure Configuration Process"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
