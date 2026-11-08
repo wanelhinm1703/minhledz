@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProxyManualResult",
+  "description": "Schema for structured Proxy and Manual Pentest Workflow artifacts (Burp Suite, OWASP ZAP)",
+  "type": "object",
+  "required": [
+    "scan_metadata",
+    "tool",
+    "target",
+    "proxy_endpoint",
+    "status"
+  ],
+  "properties": {
+    "scan_metadata": {
+      "type": "object",
+      "required": [
+        "tool",
+        "target",
+        "timestamp"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "duration_seconds": {
+          "type": "number"
+        },
+        "exit_code": {
+          "type": "integer"
+        }
+      }
+    },
+    "tool": {
+      "type": "string"
+    },
+    "target": {
+      "type": "string"
+    },
+    "proxy_endpoint": {
+      "type": "string"
+    },
+    "scope_rules": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string"
+    },
+    "manual_notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

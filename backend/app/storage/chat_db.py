@@ -79,9 +79,10 @@ class ChatDatabase:
         confidence: Optional[float] = None,
         active_target: Optional[str] = None,
         active_file: Optional[str] = None,
+        target_id: Optional[str] = None,
         **kwargs,
     ):
-        self.create_or_get_conversation(conversation_id)
+        self.create_or_get_conversation(conversation_id, target_id=target_id or active_target)
         classif = classification or {}
         if confidence is not None:
             classif["confidence"] = confidence
@@ -136,12 +137,29 @@ class ChatDatabase:
                 })
             return messages
 
-    def list_conversations(self) -> List[Dict[str, Any]]:
+    def list_conversations(self, target_id: Optional[str] = None) -> List[Dict[str, Any]]:
         with db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT conversation_id, target_id, title, created_at, updated_at FROM conversations ORDER BY updated_at DESC")
+            if target_id:
+                cursor.execute(
+                    "SELECT conversation_id, target_id, title, created_at, updated_at FROM conversations WHERE target_id = ? ORDER BY updated_at DESC",
+                    (target_id,),
+                )
+            else:
+                cursor.execute("SELECT conversation_id, target_id, title, created_at, updated_at FROM conversations ORDER BY updated_at DESC")
             rows = cursor.fetchall()
             return [{"id": r["conversation_id"], **dict(r)} for r in rows]
+
+    def delete_target_conversations(self, target_id: str):
+        with db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT conversation_id FROM conversations WHERE target_id = ?", (target_id,))
+            rows = cursor.fetchall()
+            for r in rows:
+                cid = r["conversation_id"]
+                cursor.execute("DELETE FROM chat_messages WHERE conversation_id = ?", (cid,))
+                cursor.execute("DELETE FROM conversations WHERE conversation_id = ?", (cid,))
+            conn.commit()
 
 
 chat_db = ChatDatabase()

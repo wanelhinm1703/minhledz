@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NiktoResult",
+  "description": "Schema for structured Nikto web server audit results",
+  "type": "object",
+  "required": [
+    "scan_metadata",
+    "host",
+    "port",
+    "items"
+  ],
+  "properties": {
+    "scan_metadata": {
+      "type": "object",
+      "required": [
+        "tool",
+        "target",
+        "command",
+        "timestamp",
+        "exit_code"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "duration_seconds": {
+          "type": "number"
+        },
+        "exit_code": {
+          "type": "integer"
+        }
+      }
+    },
+    "host": {
+      "type": "string"
+    },
+    "ip": {
+      "type": "string"
+    },
+    "port": {
+      "type": "integer"
+    },
+    "banner": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "description"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "osvdb": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          },
+          "uri": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "info",
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

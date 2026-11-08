@@ -10,7 +10,13 @@
     "test": "python run.py test",
     "start": "python run.py dev"
   },
-  "keywords": ["pentest", "security", "copilot", "cve", "workbench"],
+  "keywords": [
+    "pentest",
+    "security",
+    "copilot",
+    "cve",
+    "workbench"
+  ],
   "author": "Google DeepMind Agentic Coding",
   "license": "ISC"
 }

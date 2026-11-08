@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "KatanaResult",
+  "description": "Schema for structured Katana web crawler results",
+  "type": "object",
+  "required": [
+    "scan_metadata",
+    "endpoints"
+  ],
+  "properties": {
+    "scan_metadata": {
+      "type": "object",
+      "required": [
+        "tool",
+        "target",
+        "command",
+        "timestamp",
+        "exit_code"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "duration_seconds": {
+          "type": "number"
+        },
+        "exit_code": {
+          "type": "integer"
+        }
+      }
+    },
+    "endpoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "endpoint"
+        ],
+        "properties": {
+          "endpoint": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string"
+          },
+          "attribute": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -7,6 +7,7 @@ export interface TargetItem {
   normalized_value: string;
   host: string;
   status: string;
+  environment?: string;
 }
 
 export interface ScanRecord {
@@ -38,7 +39,7 @@ interface WorkspaceState {
   isTargetModalOpen: boolean;
   selectedProvider: string;
   activeView: 'editor' | 'findings' | 'reports';
-  
+
   setTargets: (targets: TargetItem[]) => void;
   setScans: (scans: ScanRecord[]) => void;
   setActiveTarget: (target: TargetItem | null) => void;
@@ -49,6 +50,11 @@ interface WorkspaceState {
   appendTerminalLog: (log: string) => void;
   setTargetModalOpen: (open: boolean) => void;
   setSelectedProvider: (provider: string) => void;
+  deleteTarget: (target_id: string) => Promise<void>;
+  deleteScan: (target_id: string) => Promise<void>;
+  refreshScans: () => Promise<void>;
+  clearTerminalLogs: () => void;
+  executeCommand: (command: string) => Promise<void>;
   fetchInitialData: () => Promise<void>;
 }
 
@@ -81,6 +87,103 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     }).catch((e) => console.error('Failed to sync provider with backend', e));
   },
 
+  deleteTarget: async (target_id: string) => {
+    try {
+      const res = await fetch(`/api/targets/${encodeURIComponent(target_id)}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        const nextTargets = get().targets.filter((t) => t.target_id !== target_id);
+        const nextActive = get().activeTarget?.target_id === target_id
+          ? (nextTargets.length > 0 ? nextTargets[0] : null)
+          : get().activeTarget;
+        set({ targets: nextTargets, activeTarget: nextActive });
+        get().appendTerminalLog(`[*] Deleted target: ${target_id}`);
+      }
+    } catch (err: any) {
+      get().appendTerminalLog(`[!] Failed to delete target ${target_id}: ${err.message}`);
+    }
+  },
+
+  refreshScans: async () => {
+    try {
+      const res = await fetch('/api/scans');
+      if (res.ok) {
+        const scans = await res.json();
+        set({ scans });
+      }
+    } catch (e) {
+      console.error('Failed to refresh scans', e);
+    }
+  },
+
+  deleteScan: async (target_id: string) => {
+    try {
+      const res = await fetch(`/api/scans/${encodeURIComponent(target_id)}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        get().appendTerminalLog(`[*] Đã xóa toàn bộ dữ liệu scan của: ${target_id}`);
+        await get().refreshScans();
+      }
+    } catch (err: any) {
+      get().appendTerminalLog(`[!] Lỗi khi xóa scan ${target_id}: ${err.message}`);
+    }
+  },
+
+  clearTerminalLogs: () => set({ terminalLogs: [] }),
+
+  executeCommand: async (command: string) => {
+    const cmd = command.trim();
+    if (!cmd) return;
+
+    get().appendTerminalLog(`$ ${cmd}`);
+    try {
+      const res = await fetch('/api/terminal/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          command: cmd,
+          target_id: get().activeTarget?.target_id || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        get().appendTerminalLog(`[!] Error: ${data.detail || 'Lệnh thực thi thất bại'}`);
+        return;
+      }
+
+      if (data.stdout) {
+        const lines = data.stdout.split('\n');
+        for (const line of lines) {
+          if (line.trim()) get().appendTerminalLog(line);
+        }
+      }
+      if (data.stderr) {
+        const errLines = data.stderr.split('\n');
+        for (const line of errLines) {
+          if (line.trim()) get().appendTerminalLog(`[!] ${line}`);
+        }
+      }
+
+      get().appendTerminalLog(`[*] Hoàn thành (exit code ${data.exit_code}) trong ${data.duration_seconds}s`);
+
+      // Auto refresh scans if scanner command was run
+      if (
+        cmd.includes('pipeline_runner') ||
+        cmd.includes('run_nmap') ||
+        cmd.includes('run_naabu') ||
+        cmd.includes('run_httpx') ||
+        cmd.includes('run_nuclei') ||
+        cmd.includes('nmap')
+      ) {
+        await get().refreshScans();
+      }
+    } catch (err: any) {
+      get().appendTerminalLog(`[!] Lỗi kết nối khi chạy lệnh: ${err.message}`);
+    }
+  },
+
   appendTerminalLog: (log) =>
     set((state) => ({ terminalLogs: [...state.terminalLogs, log] })),
 
@@ -110,7 +213,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const res = await fetch(`/api/scans/file?path=${encodeURIComponent(rel_path)}`);
       if (!res.ok) throw new Error("Failed to load file");
       const data = await res.json();
-      
+
       let formattedContent = data.content;
       if (data.is_json) {
         try {

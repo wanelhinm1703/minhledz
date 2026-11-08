@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WhatWebResult",
+  "description": "Schema for structured WhatWeb web fingerprinting results",
+  "type": "object",
+  "required": [
+    "scan_metadata",
+    "targets"
+  ],
+  "properties": {
+    "scan_metadata": {
+      "type": "object",
+      "required": [
+        "tool",
+        "target",
+        "command",
+        "timestamp",
+        "exit_code"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "duration_seconds": {
+          "type": "number"
+        },
+        "exit_code": {
+          "type": "integer"
+        }
+      }
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "target",
+          "http_status"
+        ],
+        "properties": {
+          "target": {
+            "type": "string"
+          },
+          "http_status": {
+            "type": "integer"
+          },
+          "plugins": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "string": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "version": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "account": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "os": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "module": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "technologies": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                },
+                "categories": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

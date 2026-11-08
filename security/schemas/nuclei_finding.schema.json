@@ -3,65 +3,128 @@
   "title": "NucleiFinding",
   "description": "Schema for structured Nuclei scan findings",
   "type": "object",
-  "required": ["scan_metadata", "findings"],
+  "required": [
+    "scan_metadata",
+    "findings"
+  ],
   "properties": {
     "scan_metadata": {
       "type": "object",
-      "required": ["tool", "target", "command", "timestamp", "exit_code"],
+      "required": [
+        "tool",
+        "target",
+        "command",
+        "timestamp",
+        "exit_code"
+      ],
       "properties": {
-        "tool": { "type": "string" },
-        "target": { "type": "string" },
-        "command": { "type": "string" },
-        "arguments": { "type": "string" },
-        "timestamp": { "type": "string" },
-        "duration_seconds": { "type": "number" },
-        "exit_code": { "type": "integer" }
+        "tool": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "duration_seconds": {
+          "type": "number"
+        },
+        "exit_code": {
+          "type": "integer"
+        }
       }
     },
     "findings": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["template_id", "info", "matched_at"],
+        "required": [
+          "template_id",
+          "info",
+          "matched_at"
+        ],
         "properties": {
-          "template_id": { "type": "string" },
+          "template_id": {
+            "type": "string"
+          },
           "info": {
             "type": "object",
-            "required": ["name", "severity"],
+            "required": [
+              "name",
+              "severity"
+            ],
             "properties": {
-              "name": { "type": "string" },
+              "name": {
+                "type": "string"
+              },
               "severity": {
                 "type": "string",
-                "enum": ["info", "low", "medium", "high", "critical", "unknown"]
+                "enum": [
+                  "info",
+                  "low",
+                  "medium",
+                  "high",
+                  "critical",
+                  "unknown"
+                ]
               },
-              "description": { "type": "string" },
+              "description": {
+                "type": "string"
+              },
               "tags": {
                 "type": "array",
-                "items": { "type": "string" }
+                "items": {
+                  "type": "string"
+                }
               },
               "reference": {
                 "type": "array",
-                "items": { "type": "string" }
+                "items": {
+                  "type": "string"
+                }
               },
               "cve_id": {
                 "type": "array",
-                "items": { "type": "string" }
+                "items": {
+                  "type": "string"
+                }
               },
               "cwe_id": {
                 "type": "array",
-                "items": { "type": "string" }
+                "items": {
+                  "type": "string"
+                }
               },
-              "cvss_score": { "type": "number" }
+              "cvss_score": {
+                "type": "number"
+              }
             }
           },
-          "type": { "type": "string" },
-          "host": { "type": "string" },
-          "matched_at": { "type": "string" },
+          "type": {
+            "type": "string"
+          },
+          "host": {
+            "type": "string"
+          },
+          "matched_at": {
+            "type": "string"
+          },
           "extracted_results": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
-          "curl_command": { "type": "string" }
+          "curl_command": {
+            "type": "string"
+          }
         }
       }
     }

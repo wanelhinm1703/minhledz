@@ -98,9 +98,17 @@ class TargetRegistry:
     def list_all(self) -> List[Target]:
         return list(self._targets.values())
 
+    def delete(self, target_id: str) -> bool:
+        if target_id in self._targets:
+            del self._targets[target_id]
+            self._save()
+            return True
+        return False
+
     def load_preset(self, preset_path: pathlib.Path) -> Target:
         data = yaml.safe_load(preset_path.read_text(encoding="utf-8"))
         raw_input = data.get("address") or data.get("host") or data.get("raw_input")
         name = data.get("name")
         campaign_id = data.get("campaign", "lab-local")
         return self.create_from_input(raw_input=raw_input, campaign_id=campaign_id, name=name)
+

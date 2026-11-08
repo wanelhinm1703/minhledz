@@ -170,16 +170,50 @@ class LLMService:
             real_user_query = prompt.strip()
 
         active_target = (context_data or {}).get("active_target") or ""
-        evidence_summary = ""
-        if active_target:
-            evidence_summary += f"\nMục tiêu đang pentest: {active_target}"
-        if (context_data or {}).get("correlations"):
-            for c in (context_data.get("correlations") or [])[:2]:
-                evidence_summary += f"\nLỗ hổng liên quan trong KB: {c.get('cve_id')} (CVSS {c.get('cvss_score', 7.5)}) - {c.get('description', '')[:140]}"
 
-        contents_text = f"CÂU HỎI CỦA NGƯỜI DÙNG: {real_user_query}"
+        # Build comprehensive evidence summary for Gemini
+        evidence_parts = []
+        if active_target:
+            evidence_parts.append(f"MỤC TIÊU ĐANG KIỂM THỬ (ACTIVE TARGET):\n- Host/Target: {active_target}")
+
+        if ctx_data and getattr(ctx_data, "active_file", None):
+            af = ctx_data.active_file
+            content_snippet = af.get("content", "")
+            evidence_parts.append(
+                f"TẬP TIN ĐANG MỞ TRÊN MÀN HÌNH EDITOR ({af.get('name')} - {af.get('path')}):\n```json\n{content_snippet}\n```"
+            )
+
+        if ctx_data and getattr(ctx_data, "recent_scans", None):
+            scans_lines = []
+            for sc in ctx_data.recent_scans:
+                tool_name = sc.get("tool", "Scan").upper()
+                scans_lines.append(f"[{tool_name}]: {sc.get('summary', '')}")
+                if sc.get("ports"):
+                    for p in sc["ports"]:
+                        scans_lines.append(f"  * {p.get('label')}")
+            evidence_parts.append("KẾT QUẢ QUÉT THỰC TẾ ĐÃ THU THẬP ĐƯỢC TRÊN MỤC TIÊU:\n" + "\n".join(scans_lines))
+
+        if (context_data or {}).get("correlations"):
+            corr_text = []
+            for c in (context_data.get("correlations") or [])[:3]:
+                corr_text.append(f"- {c.get('cve_id')} (CVSS {c.get('cvss_score', 'N/A')}): {c.get('description', '')[:140]}")
+            evidence_parts.append("LỖ HỔNG TƯƠNG QUAN TRONG KNOWLEDGE BASE:\n" + "\n".join(corr_text))
+
+        if ctx_data and getattr(ctx_data, "conversation_history", None):
+            hist = ctx_data.conversation_history[-4:]
+            hist_lines = []
+            for h in hist:
+                hist_lines.append(f"- {h.get('role').upper()}: {h.get('content')}")
+            evidence_parts.append("LỊCH SỬ TRAO ĐỔI TRONG PHIÊN NÀY:\n" + "\n".join(hist_lines))
+
+        evidence_summary = "\n\n".join(evidence_parts)
         if evidence_summary:
-            contents_text = f"[DỮ LIỆU CHỨNG CỨ PENTEST HIỆN TẠI]{evidence_summary}\n\n[CÂU HỎI CẦN TRẢ LỜI]\n{real_user_query}"
+            contents_text = (
+                f"[DỮ LIỆU CHỨNG CỨ PENTEST VÀ TẬP TIN ĐANG MỞ TRÊN GIAO DIỆN]\n{evidence_summary}\n\n"
+                f"[CÂU HỎI CỦA PENTESTER CẦN TRẢ LỜI]\n{real_user_query}"
+            )
+        else:
+            contents_text = f"CÂU HỎI CỦA NGƯỜI DÙNG: {real_user_query}"
 
         payload = {
             "system_instruction": {
@@ -187,8 +221,9 @@ class LLMService:
                     {
                         "text": (
                             (system_prompt or SYSTEM_PROMPT)
-                            + "\n\nQUY TẮC QUAN TRỌNG: Hãy đọc kỹ và trả lời TRỰC TIẾP, ĐÚNG TRỌNG TÂM câu hỏi của người dùng bằng tiếng Việt chuyên nghiệp, định dạng Markdown rõ ràng, dễ hiểu. "
-                            + "Không trả lời lạc đề, không trả lời mẫu cứng nhắc nếu câu hỏi không liên quan."
+                            + "\n\nQUY TẮC QUAN TRỌNG: Bạn đang tích hợp trực tiếp trong IDE AI-Pentest Copilot. Hãy đọc kỹ phần [DỮ LIỆU CHỨNG CỨ PENTEST VÀ TẬP TIN ĐANG MỞ TRÊN GIAO DIỆN] ở trên để trả lời TRỰC TIẾP, ĐÚNG TRỌNG TÂM câu hỏi của người dùng bằng tiếng Việt chuyên nghiệp, định dạng Markdown rõ ràng. "
+                            + "Khi người dùng hỏi về cổng, dịch vụ hay lỗ hổng, hãy trích dẫn chính xác các cổng, phiên bản, dịch vụ xuất hiện trong chứng cứ scan hoặc file đang mở trong editor. "
+                            + "Không từ chối khi đã có chứng cứ scan hoặc file đang mở."
                         )
                     }
                 ]
@@ -454,29 +489,14 @@ class LLMService:
         # 5. Check if user asks about Scan Analysis / Port Analysis / File Explanation / Target Safety
         if re.search(r"cổng|port|dịch vụ|service|scan|nmap|httpx|nuclei|kết quả|file|phân tích|an toàn|mục tiêu|target|đánh giá|tổng quan|tổng kết", query_lower):
             ports_found = []
-            
-            # Check target files on disk
-            if active_target:
-                root_dir = pathlib.Path(__file__).resolve().parent.parent.parent.parent
-                target_clean = active_target.replace(":", "-").replace("/", "_")
-                scan_json = root_dir / "toolkit" / "03-network" / "scans" / f"target-{target_clean}" / "nmap" / "structured" / "nmap_result.json"
-                if scan_json.exists():
-                    try:
-                        nmap_data = json.loads(scan_json.read_text(encoding="utf-8"))
-                        for host in nmap_data.get("hosts", []):
-                            for p in host.get("ports", []):
-                                s = p.get("service", {})
-                                p_id = p.get("portid")
-                                proto = p.get("protocol", "tcp")
-                                state = p.get("state", "open")
-                                s_name = s.get("name", "")
-                                s_prod = s.get("product", "")
-                                s_ver = s.get("version", "")
-                                ports_found.append(f"- **Port {p_id}/{proto}** ({state}): `{s_name}` - {s_prod} {s_ver}".strip())
-                    except Exception:
-                        pass
 
-            # Check active file
+            # 1. Check recent_scans from context engine
+            if ctx_data and getattr(ctx_data, "recent_scans", None):
+                for sc in ctx_data.recent_scans:
+                    for p in sc.get("ports", []):
+                        ports_found.append(f"- **Port {p.get('port')}/{p.get('protocol', 'tcp')}** ({p.get('state', 'open')}): `{p.get('service', '')}` - {p.get('product', '')} {p.get('version', '')}".strip())
+
+            # 2. Check active file
             if not ports_found and active_file:
                 content_str = active_file.get("content", "") if isinstance(active_file, dict) else ""
                 port_matches = re.findall(r'"portid":\s*(\d+).*?"name":\s*"([^"]+)"', content_str)
@@ -485,21 +505,57 @@ class LLMService:
                 for p, s, *rest in port_matches[:6]:
                     ports_found.append(f"- **Port {p}**: `{s}`")
 
+            # 3. Check target files on disk
+            if not ports_found and active_target:
+                root_dir = pathlib.Path(__file__).resolve().parent.parent.parent.parent
+                target_clean = active_target.replace("http://", "").replace("https://", "").replace("/", "").replace(":", "-")
+                for key in [active_target, target_clean, f"target-{active_target}", f"target-{target_clean}"]:
+                    scan_json = root_dir / "toolkit" / "03-network" / "scans" / key / "nmap" / "structured" / "nmap_result.json"
+                    if scan_json.exists():
+                        try:
+                            nmap_data = json.loads(scan_json.read_text(encoding="utf-8"))
+                            for host in nmap_data.get("hosts", []):
+                                for p in host.get("ports", []):
+                                    s = p.get("service", {})
+                                    p_id = p.get("portid")
+                                    proto = p.get("protocol", "tcp")
+                                    state = p.get("state", "open")
+                                    s_name = s.get("name", "")
+                                    s_prod = s.get("product", "")
+                                    s_ver = s.get("version", "")
+                                    ports_found.append(f"- **Port {p_id}/{proto}** ({state}): `{s_name}` - {s_prod} {s_ver}".strip())
+                            if ports_found:
+                                break
+                        except Exception:
+                            pass
+
             target_display = active_target or "192.168.100.153"
-            ports_list_md = "\n".join(ports_found) if ports_found else "- **Port 80/tcp** (open): `http` - Apache httpd 2.4.49 (Phát hiện từ Nmap)"
+            ports_list_md = "\n".join(ports_found) if ports_found else "- **Chưa tìm thấy cổng mở nào trong file scan hiện tại**"
+
+            # Tailor analysis to actual ports
+            has_smb_rpc = any("135" in p or "139" in p or "445" in p or "msrpc" in p or "microsoft" in p for p in ports_found)
+            has_web = any("80" in p or "443" in p or "http" in p for p in ports_found)
+
+            surface_points = []
+            if has_smb_rpc:
+                surface_points.append("1. **Dịch vụ Mạng Windows (MSRPC / SMB / NetBIOS)**: Phát hiện cổng 135, 139, 445 đang mở. Đây là bề mặt quản trị nội bộ Windows, cần kiểm tra phân quyền truy cập, vô hiệu hóa SMBv1, và kiểm tra Null Session / Guest access.")
+            if has_web:
+                surface_points.append("2. **Dịch vụ Web**: Phát hiện cổng HTTP/HTTPS. Cần kiểm tra phiên bản web server và rà soát các endpoint nhạy cảm.")
+            if not surface_points:
+                surface_points.append("1. **Bề mặt tấn công**: Cần kiểm tra cấu hình tường lửa và các dịch vụ mạng đang lắng nghe.")
+            surface_points.append(f"{len(surface_points) + 1}. **Khuyến nghị**: Thực hiện các lệnh kiểm tra an toàn (safe read-only validation) để xác minh cấu hình dịch vụ.")
+
             return (
-                f"### 📊 Báo Cáo Phân Tích Dịch Vụ & An Toàn ({target_display})\n\n"
-                f"Dựa trên kết quả scan Nmap/Network thu thập được trong workspace:\n\n"
+                f"### 📊 Báo Cáo Phân Tích Dịch Vụ & Cổng Mạng ({target_display})\n\n"
+                f"Dựa trên kết quả quét mạng thu thập được trong workspace:\n\n"
                 f"{ports_list_md}\n\n"
                 f"#### 🔍 Đánh Giá Bề Mặt Tấn Công (Attack Surface):\n"
-                f"1. **Dịch vụ Web**: Điểm vào chính của ứng dụng. Cần kiểm tra phiên bản web server và các endpoint nhạy cảm.\n"
-                f"2. **Độ an toàn mục tiêu**: Hệ thống phát hiện dịch vụ có phiên bản cần lưu ý bảo mật (Apache 2.4.49 có nguy cơ Path Traversal / RCE).\n"
-                f"3. **Khuyến nghị**: Thực hiện Safe Read-Only Verification để kiểm tra các lỗ hổng đã biết trên các phiên bản phần mềm này.",
+                + "\n".join(surface_points),
                 0.95,
                 [
-                    "Kiểm tra CVE cho các dịch vụ trên",
-                    "Tạo verification plan an toàn",
-                    "Xuất báo cáo đánh giá an toàn",
+                    "Hướng dẫn kiểm tra an toàn cho các cổng trên",
+                    "Đánh giá rủi ro bảo mật tổng thể",
+                    "Xuất báo cáo pentest",
                 ],
             )
 

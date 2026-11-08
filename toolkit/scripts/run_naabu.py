@@ -11,6 +11,10 @@ import subprocess
 import sys
 import time
 
+REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from toolkit.scripts.run_nmap import append_command_log
 
 
@@ -51,7 +55,7 @@ def run_naabu_scan(
 
     if naabu_bin and not force_sim:
         try:
-            cmd = ["naabu", "-host", target_host]
+            cmd = [naabu_bin, "-host", target_host]
             if port:
                 cmd.extend(["-p", str(port)])
             else:
@@ -65,6 +69,34 @@ def run_naabu_scan(
             exit_code = 1
             error_msg = str(e)
             raw_output_path.write_text(generate_mock_naabu_output(target_host, port), encoding="utf-8")
+    elif not force_sim:
+        # Probe real TCP ports using sockets
+        import socket
+        import concurrent.futures
+        test_ports = [port] if port else [80, 443, 8080, 8000, 3000, 22, 21, 25, 135, 139, 445, 3389, 3306, 5432, 8443]
+        open_found = []
+
+        def check_port(p):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.3)
+                    if s.connect_ex((target_host, p)) == 0:
+                        return p
+            except Exception:
+                pass
+            return None
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            results = executor.map(check_port, test_ports)
+            for p in results:
+                if p is not None:
+                    open_found.append(p)
+
+        if open_found:
+            lines = [f"{target_host}:{p}" for p in sorted(open_found)]
+            raw_output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        else:
+            raw_output_path.write_text("", encoding="utf-8")
     else:
         raw_output_path.write_text(generate_mock_naabu_output(target_host, port), encoding="utf-8")
 

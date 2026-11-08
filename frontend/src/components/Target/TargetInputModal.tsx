@@ -172,11 +172,10 @@ export const TargetInputModal: React.FC = () => {
           <button
             onClick={handleScan}
             disabled={!detection || !detection.scope.allowed || scanning}
-            className={`flex items-center space-x-1.5 px-4 py-1.5 rounded font-medium transition ${
-              detection && detection.scope.allowed && !scanning
+            className={`flex items-center space-x-1.5 px-4 py-1.5 rounded font-medium transition ${detection && detection.scope.allowed && !scanning
                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
                 : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-            }`}
+              }`}
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>{scanning ? 'Executing Scan...' : 'Confirm & Scan'}</span>

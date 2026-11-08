@@ -31,13 +31,22 @@ async def chat_websocket(websocket: WebSocket):
             if not message:
                 continue
 
+            target_id = payload.get("target_id")
+            active_file = payload.get("active_file")
+            active_file_content = payload.get("active_file_content")
+            active_target = payload.get("active_target")
+
             conversation_id = payload.get("conversation_id")
             if not conversation_id:
-                conversation_id = str(uuid.uuid4())
-                chat_db.create_conversation(conversation_id, title=message[:40])
-
-            active_file = payload.get("active_file")
-            active_target = payload.get("active_target")
+                if target_id:
+                    conversation_id = f"target_{target_id}"
+                else:
+                    conversation_id = str(uuid.uuid4())
+                chat_db.create_conversation(
+                    conversation_id,
+                    title=f"Target: {active_target}" if active_target else message[:40],
+                    target_id=target_id,
+                )
 
             # 1. Save user message
             chat_db.add_message(
@@ -46,6 +55,7 @@ async def chat_websocket(websocket: WebSocket):
                 content=message,
                 active_target=active_target,
                 active_file=active_file,
+                target_id=target_id,
             )
 
             # 2. Check Guardrails for Exploit Intent
@@ -89,6 +99,7 @@ async def chat_websocket(websocket: WebSocket):
                 message=message,
                 active_target=active_target,
                 active_file=active_file,
+                active_file_content=active_file_content,
                 conversation_id=conversation_id,
             )
 

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { MessageSquare, Send, Sparkles, ShieldAlert, CheckCircle2, ChevronRight, RefreshCw, Layers } from 'lucide-react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { MessageSquare, Send, Sparkles, ShieldAlert, CheckCircle2, ChevronRight, RefreshCw, Layers, RotateCcw } from 'lucide-react'
 import { useWorkspaceStore } from '../../store/workspaceStore'
 
 interface SourceItem {
@@ -32,22 +32,10 @@ export const ChatPanel: React.FC = () => {
   const { activeTarget, openTabs, activeTabId, selectedProvider, setSelectedProvider } = useWorkspaceStore();
   const activeTab = openTabs.find((t) => t.id === activeTabId);
   const activeFile = activeTab?.path;
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content:
-        'Xin chào! Tôi là AI-Pentest Copilot. Tôi tuân thủ nguyên tắc an toàn: không tự động khai thác, đối sánh CVE chính xác từ KB, và cung cấp verification plan an toàn (read-only).',
-      nextSteps: [
-        'Apache 2.4.49 có CVE gì?',
-        'Hướng dẫn safe read-only verification cho target',
-        'Phân tích file kết quả scan',
-      ],
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMsg, setInputMsg] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string>('conv_global');
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [activeProvider, setActiveProvider] = useState<string>('offline');
 
@@ -61,6 +49,77 @@ export const ChatPanel: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load target-isolated chat session
+  const loadTargetSession = useCallback(async () => {
+    const convId = activeTarget ? `target_${activeTarget.target_id}` : 'conv_global';
+    setConversationId(convId);
+    try {
+      const res = await fetch(`/api/chat/conversations/${convId}/messages`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.messages && data.messages.length > 0) {
+          setMessages(
+            data.messages.map((m: any, idx: number) => ({
+              id: `msg_${idx}_${m.created_at || Date.now()}`,
+              role: m.role,
+              content: m.content,
+              sources: m.sources,
+              confidence: m.confidence,
+              nextSteps: m.classification?.next_steps || [],
+            }))
+          );
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load target messages', err);
+    }
+
+    // Default welcome message per target session
+    if (activeTarget) {
+      setMessages([
+        {
+          id: `welcome_${convId}`,
+          role: 'assistant',
+          content: `🎯 **Phiên làm việc riêng cho mục tiêu: ${activeTarget.name}**\n- Địa chỉ: \`${activeTarget.host || activeTarget.normalized_value}\`\n- Môi trường: \`${activeTarget.environment || 'lab'}\`\n\nLịch sử chat và phân tích được lưu trữ độc lập cho mục tiêu này. Bạn có thể hỏi về các cổng đang mở, phát hiện CVE hoặc hướng dẫn kiểm tra an toàn (read-only).`,
+          nextSteps: [
+            `Phân tích các cổng mở của ${activeTarget.name}`,
+            `Có phát hiện lỗ hổng hay CVE nào trên ${activeTarget.host || activeTarget.normalized_value} không?`,
+            `Tạo verification plan an toàn cho mục tiêu này`,
+          ],
+        },
+      ]);
+    } else {
+      setMessages([
+        {
+          id: 'welcome_default',
+          role: 'assistant',
+          content:
+            'Xin chào! Tôi là AI-Pentest Copilot. Hãy chọn một mục tiêu trong Explorer bên trái để bắt đầu phiên phân tích chuyên biệt.',
+          nextSteps: [
+            'Apache 2.4.49 có CVE gì?',
+            'Hướng dẫn safe read-only verification',
+            'Phân tích kết quả scan mạng',
+          ],
+        },
+      ]);
+    }
+  }, [activeTarget?.target_id]);
+
+  useEffect(() => {
+    loadTargetSession();
+  }, [loadTargetSession]);
+
+  const handleClearSession = async () => {
+    const convId = activeTarget ? `target_${activeTarget.target_id}` : 'conv_global';
+    try {
+      await fetch(`/api/chat/conversations/${convId}`, { method: 'DELETE' });
+    } catch (e) {
+      console.error('Failed to clear conversation', e);
+    }
+    loadTargetSession();
+  };
 
   // Load LLM providers
   useEffect(() => {
@@ -202,8 +261,10 @@ export const ChatPanel: React.FC = () => {
 
     const payload = {
       message: trimmed,
+      target_id: activeTarget?.target_id || null,
       active_target: activeTarget?.normalized_value || activeTarget?.host || activeTarget?.name || null,
       active_file: activeFile || null,
+      active_file_content: activeTab?.content || null,
       conversation_id: conversationId,
     };
 
@@ -262,30 +323,42 @@ export const ChatPanel: React.FC = () => {
           <Sparkles className="w-4 h-4 text-cyan-400" />
           <span className="font-semibold text-zinc-200">AI-PENTEST COPILOT</span>
         </div>
-        <select
-          value={activeProvider}
-          onChange={(e) => {
-            switchProvider(e.target.value);
-            setSelectedProvider(e.target.value);
-          }}
-          className="bg-zinc-900 text-cyan-300 font-medium border border-cyan-800/80 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:border-cyan-500 cursor-pointer"
-        >
-          {providers.map((p) => (
-            <option key={p.id} value={p.id} className="bg-zinc-900 text-zinc-200">
-              {p.id === 'gemini' ? '✨ Gemini Flash' : p.name.split(' ')[0]} {p.active ? '●' : ''}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handleClearSession}
+            title="Làm mới / Xóa lịch sử phiên chat này"
+            className="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded transition"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+          <select
+            value={activeProvider}
+            onChange={(e) => {
+              switchProvider(e.target.value);
+              setSelectedProvider(e.target.value);
+            }}
+            className="bg-zinc-900 text-cyan-300 font-medium border border-cyan-800/80 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:border-cyan-500 cursor-pointer"
+          >
+            {providers.map((p) => (
+              <option key={p.id} value={p.id} className="bg-zinc-900 text-zinc-200">
+                {p.id === 'gemini' ? '✨ Gemini Flash' : p.name.split(' ')[0]} {p.active ? '●' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Target & Context Strip */}
       <div className="px-3 py-1.5 bg-[#18181c] border-b border-[#27272a] text-[11px] text-zinc-400 flex items-center justify-between">
-        <span className="truncate max-w-[180px]">
-          Target: <strong className="text-emerald-400">{activeTarget?.name || 'None'}</strong>
-        </span>
+        <div className="flex items-center space-x-1.5 truncate max-w-[200px]">
+          <span className="text-zinc-500">Session:</span>
+          <strong className="text-emerald-400 truncate" title={activeTarget?.host || activeTarget?.name}>
+            {activeTarget?.name || 'Chung'}
+          </strong>
+        </div>
         {activeFile && (
-          <span className="truncate max-w-[120px] text-zinc-500 font-mono text-[10px]">
-            {activeFile.split('/').pop()}
+          <span className="truncate max-w-[130px] text-cyan-400/90 font-mono text-[10px] bg-zinc-900/90 px-1.5 py-0.5 rounded border border-zinc-800" title={activeFile}>
+            📄 {activeFile.split('/').pop()}
           </span>
         )}
       </div>
@@ -299,13 +372,12 @@ export const ChatPanel: React.FC = () => {
           return (
             <div
               key={m.id}
-              className={`p-3 rounded-lg text-xs leading-relaxed transition-all ${
-                isUser
+              className={`p-3 rounded-lg text-xs leading-relaxed transition-all ${isUser
                   ? 'bg-cyan-950/70 border border-cyan-800/80 text-cyan-200 ml-4'
                   : isRefusal
-                  ? 'bg-red-950/40 border border-red-800/80 text-red-200 mr-4'
-                  : 'bg-zinc-900/90 border border-zinc-800 text-zinc-200 mr-4'
-              }`}
+                    ? 'bg-red-950/40 border border-red-800/80 text-red-200 mr-4'
+                    : 'bg-zinc-900/90 border border-zinc-800 text-zinc-200 mr-4'
+                }`}
             >
               <div className="flex items-center justify-between text-[10px] font-bold text-zinc-500 mb-1.5 uppercase">
                 <span className="flex items-center space-x-1">

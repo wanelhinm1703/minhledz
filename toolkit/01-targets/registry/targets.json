@@ -1,12 +1,12 @@
 [
   {
-    "target_id": "target-192.168.56.101",
+    "target_id": "target-192.168.100.153",
     "campaign_id": "lab-local",
-    "name": "192.168.56.101",
+    "name": "192.168.100.153",
     "type": "ipv4",
-    "raw_input": "192.168.56.101",
-    "normalized_value": "192.168.56.101",
-    "host": "192.168.56.101",
+    "raw_input": "192.168.100.153",
+    "normalized_value": "192.168.100.153",
+    "host": "192.168.100.153",
     "port": null,
     "scheme": null,
     "path": null,
@@ -38,8 +38,8 @@
       "extra": {}
     },
     "status": "active",
-    "created_at": "2026-09-14T15:29:32.565075+00:00",
-    "updated_at": "2026-09-14T15:29:32.565086+00:00"
+    "created_at": "2026-09-15T04:21:56.313194+00:00",
+    "updated_at": "2026-09-15T04:21:56.313211+00:00"
   },
   {
     "target_id": "target-192.168.56.101-3000",
@@ -80,8 +80,8 @@
       "extra": {}
     },
     "status": "active",
-    "created_at": "2026-09-14T15:29:32.536260+00:00",
-    "updated_at": "2026-09-14T15:29:32.536269+00:00"
+    "created_at": "2026-09-15T06:52:17.143066+00:00",
+    "updated_at": "2026-09-15T06:52:17.143076+00:00"
   },
   {
     "target_id": "target-8.8.8.8",
@@ -122,50 +122,8 @@
       "extra": {}
     },
     "status": "blocked",
-    "created_at": "2026-09-14T15:29:32.581193+00:00",
-    "updated_at": "2026-09-14T15:29:32.581204+00:00"
-  },
-  {
-    "target_id": "target-192.168.100.153",
-    "campaign_id": "lab-local",
-    "name": "192.168.100.153",
-    "type": "ipv4",
-    "raw_input": "192.168.100.153",
-    "normalized_value": "192.168.100.153",
-    "host": "192.168.100.153",
-    "port": null,
-    "scheme": null,
-    "path": null,
-    "environment": "lab",
-    "scope": {
-      "allowed_ports": [],
-      "forbidden_ports": [],
-      "allowed_attacks": [
-        "recon",
-        "web",
-        "network"
-      ],
-      "forbidden_attacks": [
-        "dos",
-        "brute-force",
-        "exploit"
-      ],
-      "is_in_scope": true,
-      "scope_rule": null
-    },
-    "tags": [
-      "ipv4",
-      "lab"
-    ],
-    "metadata": {
-      "os": null,
-      "technologies": [],
-      "notes": null,
-      "extra": {}
-    },
-    "status": "active",
-    "created_at": "2026-09-14T15:23:27.952911+00:00",
-    "updated_at": "2026-09-14T15:23:27.952924+00:00"
+    "created_at": "2026-09-15T06:52:17.191664+00:00",
+    "updated_at": "2026-09-15T06:52:17.191681+00:00"
   },
   {
     "target_id": "target-192.168.100.153-8080",
@@ -206,20 +164,20 @@
       "extra": {}
     },
     "status": "active",
-    "created_at": "2026-09-14T15:29:27.307420+00:00",
-    "updated_at": "2026-09-14T15:29:27.307432+00:00"
+    "created_at": "2026-09-15T06:52:10.067990+00:00",
+    "updated_at": "2026-09-15T06:52:10.068004+00:00"
   },
   {
-    "target_id": "target-www.sublimemerge.com-443",
+    "target_id": "target-192.168.56.101",
     "campaign_id": "lab-local",
-    "name": "www.sublimemerge.com-443",
-    "type": "url",
-    "raw_input": "https://www.sublimemerge.com/download_thanks?target=win-x64",
-    "normalized_value": "https://www.sublimemerge.com/download_thanks",
-    "host": "www.sublimemerge.com",
-    "port": 443,
-    "scheme": "https",
-    "path": "/download_thanks",
+    "name": "192.168.56.101",
+    "type": "ipv4",
+    "raw_input": "192.168.56.101",
+    "normalized_value": "192.168.56.101",
+    "host": "192.168.56.101",
+    "port": null,
+    "scheme": null,
+    "path": null,
     "environment": "lab",
     "scope": {
       "allowed_ports": [],
@@ -235,10 +193,10 @@
         "exploit"
       ],
       "is_in_scope": true,
-      "scope_rule": null
+      "scope_rule": "192.168.0.0/16"
     },
     "tags": [
-      "url",
+      "ipv4",
       "lab"
     ],
     "metadata": {
@@ -248,7 +206,7 @@
       "extra": {}
     },
     "status": "active",
-    "created_at": "2026-09-14T15:28:39.635820+00:00",
-    "updated_at": "2026-09-14T15:28:39.635833+00:00"
+    "created_at": "2026-09-15T06:52:17.173275+00:00",
+    "updated_at": "2026-09-15T06:52:17.173291+00:00"
   }
 ]

@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SearchsploitResult",
+  "description": "Schema for structured SearchSploit vulnerability reference lookup results",
+  "type": "object",
+  "required": [
+    "scan_metadata",
+    "query",
+    "results"
+  ],
+  "properties": {
+    "scan_metadata": {
+      "type": "object",
+      "required": [
+        "tool",
+        "target",
+        "command",
+        "timestamp",
+        "exit_code"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "duration_seconds": {
+          "type": "number"
+        },
+        "exit_code": {
+          "type": "integer"
+        }
+      }
+    },
+    "query": {
+      "type": "string"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "title",
+          "type",
+          "path"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "edb_id": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "cve_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

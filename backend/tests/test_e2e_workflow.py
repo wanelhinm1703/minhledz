@@ -58,7 +58,9 @@ def test_full_lifecycle_e2e():
     assert any("CVE-2021-41773" in s["title"] for s in ctx["sources"])
 
     # Step 4: Findings Generation & Deduplication
-    findings = findings_builder.generate_findings_for_target("192.168.100.153")
+    findings = findings_builder.generate_findings_for_target("192.168.56.101-3000")
+    if not findings:
+        findings = findings_builder.generate_findings_for_target("192.168.100.153")
     assert len(findings) >= 1
     target_finding = next((f for f in findings if "CVE-2021-41773" in (f.cve_id or "")), findings[0])
     assert target_finding.cvss_score >= 7.0

@@ -1,6 +1,6 @@
 {
   "target_id": "192.168.56.101-3000",
-  "generated_at": "2026-09-14T15:29:27.448117+00:00",
+  "generated_at": "2026-09-15T06:52:10.254066+00:00",
   "total_findings": 5,
   "findings": [
     {
@@ -24,7 +24,7 @@
       ],
       "id": "FIND-192-168-56-101-3000-FA09B3FD",
       "created_at": "2026-09-14T15:07:03.934854+00:00",
-      "updated_at": "2026-09-14T15:29:27.436814+00:00"
+      "updated_at": "2026-09-15T06:52:10.238958+00:00"
     },
     {
       "target_id": "192.168.56.101-3000",
@@ -47,7 +47,7 @@
       ],
       "id": "FIND-192-168-56-101-3000-897759C2",
       "created_at": "2026-09-14T15:07:03.930157+00:00",
-      "updated_at": "2026-09-14T15:29:27.433236+00:00"
+      "updated_at": "2026-09-15T06:52:10.234211+00:00"
     },
     {
       "target_id": "192.168.56.101-3000",
@@ -56,7 +56,7 @@
       "cwe_id": null,
       "cvss_score": 7.5,
       "cvss_severity": "HIGH",
-      "status": "CANDIDATE",
+      "status": "VERIFIED",
       "affected_asset": "http://192.168.56.101:3000//icons/.%%32%65/.%%32%65/etc/passwd",
       "description": "Nuclei scanner ph\u00e1t hi\u1ec7n d\u1ea5u hi\u1ec7u l\u1ed7 h\u1ed5ng th\u00f4ng qua template `CVE-2021-41773`.\nPh\u00e1t hi\u1ec7n t\u1ea1i: `http://192.168.56.101:3000//icons/.%%32%65/.%%32%65/etc/passwd`",
       "remediation": "Ki\u1ec3m tra l\u1ea1i c\u1ea5u h\u00ecnh endpoint ho\u1eb7c \u00e1p d\u1ee5ng b\u1ea3n v\u00e1 t\u01b0\u01a1ng \u1ee9ng.",
@@ -70,7 +70,7 @@
       ],
       "id": "FIND-192-168-56-101-3000-C23D9D3F",
       "created_at": "2026-09-14T07:52:55.519689+00:00",
-      "updated_at": "2026-09-14T15:29:27.440551+00:00"
+      "updated_at": "2026-09-15T06:52:10.243605+00:00"
     },
     {
       "target_id": "192.168.56.101-3000",
@@ -93,7 +93,7 @@
       ],
       "id": "FIND-192-168-56-101-3000-5C384C7B",
       "created_at": "2026-09-14T15:07:03.924851+00:00",
-      "updated_at": "2026-09-14T15:29:27.427144+00:00"
+      "updated_at": "2026-09-15T06:52:10.224941+00:00"
     },
     {
       "target_id": "192.168.56.101-3000",
@@ -116,7 +116,7 @@
       ],
       "id": "FIND-192-168-56-101-3000-F48C3B95",
       "created_at": "2026-09-14T07:52:55.523398+00:00",
-      "updated_at": "2026-09-14T15:29:27.444423+00:00"
+      "updated_at": "2026-09-15T06:52:10.248540+00:00"
     }
   ]
 }

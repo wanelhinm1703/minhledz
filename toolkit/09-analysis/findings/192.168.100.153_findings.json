@@ -1,6 +1,6 @@
 {
   "target_id": "192.168.100.153",
-  "generated_at": "2026-09-14T15:29:27.334667+00:00",
+  "generated_at": "2026-09-15T06:51:40.171093+00:00",
   "total_findings": 1,
   "findings": [
     {
@@ -10,7 +10,7 @@
       "cwe_id": "CWE-22",
       "cvss_score": 7.5,
       "cvss_severity": "HIGH",
-      "status": "VERIFIED",
+      "status": "CANDIDATE",
       "affected_asset": "192.168.100.153:80",
       "description": "Path traversal vulnerability test",
       "remediation": "Upgrade to 2.4.51+",
@@ -20,17 +20,11 @@
           "file_path": "03-network/scans/nmap.xml",
           "matched_text": "Apache 2.4.49 on port 80",
           "timestamp": null
-        },
-        {
-          "tool": "nmap",
-          "file_path": "03-network/scans/target-192.168.100.153/nmap/structured/nmap_result.json",
-          "matched_text": "Port 80/tcp open: Apache httpd 2.4.49 (Service: http)",
-          "timestamp": "2026-09-14T15:29:27.318192+00:00"
         }
       ],
       "id": "FIND-REPORT-TEST",
-      "created_at": "2026-09-14T15:09:53.277222+00:00",
-      "updated_at": "2026-09-14T15:29:27.328262+00:00"
+      "created_at": "2026-09-15T06:49:42.379918+00:00",
+      "updated_at": "2026-09-15T06:49:42.379918+00:00"
     }
   ]
 }

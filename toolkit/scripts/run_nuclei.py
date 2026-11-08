@@ -11,6 +11,10 @@ import subprocess
 import sys
 import time
 
+REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from toolkit.scripts.run_nmap import append_command_log
 
 
@@ -105,7 +109,24 @@ def run_nuclei_scan(
         except Exception as e:
             exit_code = 1
             error_msg = str(e)
+    elif not force_sim:
+        # Check if HTTP service was discovered or connects on target
+        has_web = False
+        try:
+            import socket
+            for p in [80, 443, 3000, 8080]:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.3)
+                    if s.connect_ex((target_host, p)) == 0:
+                        has_web = True
+                        break
+        except Exception:
+            pass
+
+        if has_web:
             raw_jsonl_path.write_text(generate_mock_nuclei_jsonl(target_url, target_host), encoding="utf-8")
+        else:
+            raw_jsonl_path.write_text("", encoding="utf-8")
     else:
         raw_jsonl_path.write_text(generate_mock_nuclei_jsonl(target_url, target_host), encoding="utf-8")
 

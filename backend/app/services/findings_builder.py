@@ -1,4 +1,4 @@
-"""Findings Builder: aggregates scan evidence from Nmap, HTTPx, and Nuclei into deduplicated findings."""
+"""Findings Builder: aggregates scan evidence from Original Toolset (Nmap, HTTPx, Nuclei, WhatWeb, Nikto, Service Enum, SearchSploit) into deduplicated findings."""
 
 from __future__ import annotations
 
@@ -36,24 +36,44 @@ class FindingsBuilder:
         self.root_dir = root_dir or pathlib.Path(__file__).resolve().parent.parent.parent.parent
 
     def generate_findings_for_target(self, target_id: str) -> List[Finding]:
-        """Aggregate evidence for a target from Nmap, HTTPx, Nuclei, correlate with KB, and deduplicate."""
+        """Aggregate evidence for a target across original toolset, correlate with KB, and deduplicate."""
         created_or_updated: List[Finding] = []
         target_dir_name = f"target-{target_id.replace(':', '-')}"
 
-        # 1. Inspect Nmap structured results
+        # 1. Nmap structured results
         nmap_file = self.root_dir / "toolkit" / "03-network" / "scans" / target_dir_name / "nmap" / "structured" / "nmap_result.json"
         if nmap_file.exists():
             created_or_updated.extend(self._process_nmap(target_id, nmap_file))
 
-        # 2. Inspect Nuclei structured results
+        # 2. Nuclei structured results
         nuclei_file = self.root_dir / "toolkit" / "05-vulnerability" / "scans" / target_dir_name / "nuclei" / "structured" / "nuclei_result.json"
         if nuclei_file.exists():
             created_or_updated.extend(self._process_nuclei(target_id, nuclei_file))
 
-        # 3. Inspect HTTPx structured results
+        # 3. HTTPx structured results
         httpx_file = self.root_dir / "toolkit" / "04-web" / "scans" / target_dir_name / "httpx" / "structured" / "httpx_result.json"
         if httpx_file.exists():
             created_or_updated.extend(self._process_httpx(target_id, httpx_file))
+
+        # 4. WhatWeb structured results
+        whatweb_file = self.root_dir / "toolkit" / "04-web" / "scans" / target_dir_name / "whatweb" / "structured" / "whatweb_result.json"
+        if whatweb_file.exists():
+            created_or_updated.extend(self._process_whatweb(target_id, whatweb_file))
+
+        # 5. Nikto structured results
+        nikto_file = self.root_dir / "toolkit" / "04-web" / "scans" / target_dir_name / "nikto" / "structured" / "nikto_result.json"
+        if nikto_file.exists():
+            created_or_updated.extend(self._process_nikto(target_id, nikto_file))
+
+        # 6. Service Enumeration results (SMB, SNMP, LDAP, DB)
+        service_enum_dir = self.root_dir / "toolkit" / "06-service-enum" / "scans" / target_dir_name
+        if service_enum_dir.exists():
+            created_or_updated.extend(self._process_service_enum(target_id, service_enum_dir))
+
+        # 7. SearchSploit lookup results
+        searchsploit_file = self.root_dir / "toolkit" / "05-vulnerability" / "scans" / target_dir_name / "searchsploit" / "structured" / "searchsploit_result.json"
+        if searchsploit_file.exists():
+            created_or_updated.extend(self._process_searchsploit(target_id, searchsploit_file))
 
         # Export findings JSON to 09-analysis/findings/
         self._export_target_findings(target_id)
@@ -65,7 +85,7 @@ class FindingsBuilder:
         try:
             data = json.loads(file_path.read_text(encoding="utf-8"))
             rel_path = str(file_path.relative_to(self.root_dir / "toolkit")).replace("\\", "/")
-            
+
             for host in data.get("hosts", []):
                 ip = host.get("ip") or host.get("addresses", {}).get("ipv4", target_id)
                 for port_info in host.get("ports", []):
@@ -132,6 +152,13 @@ class FindingsBuilder:
                 name = item.get("info", {}).get("name", template_id)
                 severity_str = (item.get("info", {}).get("severity") or "info").upper()
                 cve_id = item.get("cve_id")
+                if not cve_id:
+                    info_cve = item.get("info", {}).get("cve_id") or item.get("info", {}).get("cve-id")
+                    if isinstance(info_cve, list) and info_cve:
+                        cve_id = info_cve[0]
+                    elif isinstance(info_cve, str):
+                        cve_id = info_cve
+
                 if not cve_id and template_id.upper().startswith("CVE-"):
                     cve_id = template_id.upper()
 
@@ -169,17 +196,15 @@ class FindingsBuilder:
         try:
             data = json.loads(file_path.read_text(encoding="utf-8"))
             rel_path = str(file_path.relative_to(self.root_dir / "toolkit")).replace("\\", "/")
-            endpoints = data if isinstance(data, list) else data.get("endpoints", [])
+            endpoints = data if isinstance(data, list) else (data.get("endpoints", []) or data.get("results", []))
 
             for ep in endpoints:
                 url = ep.get("url", target_id)
                 webserver = ep.get("webserver", "")
                 title = ep.get("title", "")
-                tech = ep.get("tech", [])
+                tech = ep.get("technologies", []) or ep.get("tech", [])
 
-                # Check if webserver reveals known version
                 if "apache" in webserver.lower():
-                    # Attempt correlation
                     import re
                     m = re.search(r"apache/([0-9.]+)", webserver, re.IGNORECASE)
                     if m:
@@ -192,7 +217,7 @@ class FindingsBuilder:
                                 cve_id=match.cve_id,
                                 cwe_id=match.cwe_ids[0] if match.cwe_ids else "CWE-22",
                                 title=f"HTTPx Web Banner: Apache {ver} — {match.cve_id}",
-                                description=f"HTTPx ghi nhận server banner `{webserver}` tại `{url}`. Tương quan với lỗ hổng {match.cve_id} ({match.description[:120]}...).",
+                                description=f"HTTPx ghi nhận server banner `{webserver}` tại `{url}`. Tương quan với lỗ hổng {match.cve_id}.",
                                 cvss_score=match.cvss_score or 7.5,
                                 remediation="Nâng cấp Apache HTTP Server hoặc cấu hình ẩn ServerTokens.",
                                 evidence=EvidenceItem(
@@ -205,6 +230,156 @@ class FindingsBuilder:
                             results.append(finding)
         except Exception as e:
             print(f"[!] Error processing httpx results: {e}")
+        return results
+
+    def _process_whatweb(self, target_id: str, file_path: pathlib.Path) -> List[Finding]:
+        results = []
+        try:
+            data = json.loads(file_path.read_text(encoding="utf-8"))
+            rel_path = str(file_path.relative_to(self.root_dir / "toolkit")).replace("\\", "/")
+            targets = data.get("targets", [])
+            for t_item in targets:
+                target_url = t_item.get("target", target_id)
+                for tech in t_item.get("technologies", []):
+                    name = tech.get("name", "")
+                    ver = tech.get("version", "")
+                    clean_prod = name
+                    if "apache" in name.lower():
+                        clean_prod = "Apache"
+                    elif "php" in name.lower():
+                        clean_prod = "PHP"
+
+                    if clean_prod and ver:
+                        matches = Correlator.correlate(product=clean_prod, version=ver, limit=2)
+                        for match in matches:
+                            finding = self._upsert_finding(
+                                target_id=target_id,
+                                asset=target_url,
+                                cve_id=match.cve_id,
+                                cwe_id=match.cwe_ids[0] if match.cwe_ids else "CWE-200",
+                                title=f"WhatWeb: {clean_prod} {ver} — {match.cve_id}",
+                                description=f"WhatWeb fingerprinting ghi nhận {clean_prod} phiên bản {ver} tại {target_url}.",
+                                cvss_score=match.cvss_score or 7.5,
+                                remediation=f"Cập nhật {clean_prod} lên phiên bản an toàn.",
+                                evidence=EvidenceItem(
+                                    tool="whatweb",
+                                    file_path=rel_path,
+                                    matched_text=f"WhatWeb detected: {name} {ver}",
+                                    timestamp=datetime.now(timezone.utc).isoformat(),
+                                ),
+                            )
+                            results.append(finding)
+        except Exception as e:
+            print(f"[!] Error processing whatweb results: {e}")
+        return results
+
+    def _process_nikto(self, target_id: str, file_path: pathlib.Path) -> List[Finding]:
+        results = []
+        try:
+            data = json.loads(file_path.read_text(encoding="utf-8"))
+            rel_path = str(file_path.relative_to(self.root_dir / "toolkit")).replace("\\", "/")
+            host = data.get("host", target_id)
+            port = data.get("port", 80)
+            asset = f"{host}:{port}"
+
+            for item in data.get("items", []):
+                desc = item.get("description", "")
+                nik_id = item.get("id", "0")
+                sev_str = item.get("severity", "low")
+                cvss = 4.5 if sev_str == "low" else (6.5 if sev_str == "medium" else 3.0)
+
+                finding = self._upsert_finding(
+                    target_id=target_id,
+                    asset=asset,
+                    title=f"Nikto: {desc[:60]}...",
+                    description=f"Nikto phát hiện cấu hình web tiềm ẩn rủi ro: {desc}",
+                    cvss_score=cvss,
+                    remediation="Kiểm tra cấu hình web server và thiết lập các header bảo mật phù hợp.",
+                    evidence=EvidenceItem(
+                        tool="nikto",
+                        file_path=rel_path,
+                        matched_text=f"Nikto Item {nik_id}: {desc}",
+                        timestamp=datetime.now(timezone.utc).isoformat(),
+                    ),
+                )
+                results.append(finding)
+        except Exception as e:
+            print(f"[!] Error processing nikto results: {e}")
+        return results
+
+    def _process_service_enum(self, target_id: str, enum_dir: pathlib.Path) -> List[Finding]:
+        results = []
+        try:
+            for tool_folder in enum_dir.iterdir():
+                if not tool_folder.is_dir():
+                    continue
+                tool_name = tool_folder.name
+                json_file = tool_folder / "structured" / f"{tool_name}_result.json"
+                if not json_file.exists():
+                    continue
+
+                data = json.loads(json_file.read_text(encoding="utf-8"))
+                rel_path = str(json_file.relative_to(self.root_dir / "toolkit")).replace("\\", "/")
+
+                for f_item in data.get("findings", []):
+                    cat = f_item.get("category", "service_enum")
+                    desc = f_item.get("description", "")
+                    sev = f_item.get("severity", "info")
+                    cvss = 5.0 if sev == "medium" else (2.0 if sev == "low" else 1.0)
+
+                    finding = self._upsert_finding(
+                        target_id=target_id,
+                        asset=target_id,
+                        title=f"{tool_name.upper()}: {cat}",
+                        description=desc,
+                        cvss_score=cvss,
+                        remediation="Đảm bảo dịch vụ không cho phép truy cập nặc danh hoặc rò rỉ thông tin người dùng/chia sẻ.",
+                        evidence=EvidenceItem(
+                            tool=tool_name,
+                            file_path=rel_path,
+                            matched_text=desc,
+                            timestamp=datetime.now(timezone.utc).isoformat(),
+                        ),
+                    )
+                    results.append(finding)
+        except Exception as e:
+            print(f"[!] Error processing service enum results: {e}")
+        return results
+
+    def _process_searchsploit(self, target_id: str, file_path: pathlib.Path) -> List[Finding]:
+        results = []
+        try:
+            data = json.loads(file_path.read_text(encoding="utf-8"))
+            rel_path = str(file_path.relative_to(self.root_dir / "toolkit")).replace("\\", "/")
+            query = data.get("query", target_id)
+
+            for exp in data.get("results", [])[:3]:
+                title = exp.get("title", "")
+                edb_id = exp.get("edb_id", "")
+                cve_list = exp.get("cve_ids", [])
+                cve_id = cve_list[0] if cve_list else None
+
+                finding = self._upsert_finding(
+                    target_id=target_id,
+                    asset=target_id,
+                    cve_id=cve_id,
+                    title=f"SearchSploit Reference: {title[:70]}",
+                    description=(
+                        f"SearchSploit phát hiện tài liệu tham khảo lỗ hổng EDB-{edb_id} liên quan đến truy vấn '{query}'.\n"
+                        f"Lưu ý: Đây là tài liệu tham khảo; không chứng minh mục tiêu có thể bị khai thác thực tế mà không qua kiểm thử an toàn."
+                    ),
+                    cvss_score=5.0,
+                    remediation="Xác minh phiên bản phần mềm thực tế và đối chiếu với bản vá của nhà cung cấp.",
+                    evidence=EvidenceItem(
+                        tool="searchsploit",
+                        file_path=rel_path,
+                        matched_text=f"SearchSploit match: {title} (EDB-{edb_id})",
+                        timestamp=datetime.now(timezone.utc).isoformat(),
+                    ),
+                )
+                results.append(finding)
+        except Exception as e:
+            print(f"[!] Error processing searchsploit results: {e}")
         return results
 
     def _upsert_finding(
@@ -228,11 +403,9 @@ class FindingsBuilder:
         )
 
         if existing:
-            # Duplicate found: append evidence to existing finding chain
             updated = findings_db.append_evidence(existing.id, [evidence.model_dump()])
             return updated or existing
 
-        # Generate reproducible ID
         hash_seed = f"{target_id}:{asset}:{cve_id or title}"
         hash_suffix = hashlib.sha256(hash_seed.encode("utf-8")).hexdigest()[:8].upper()
         clean_target = target_id.replace(":", "-").replace(".", "-")

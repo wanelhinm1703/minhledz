@@ -114,3 +114,16 @@ def create_target(req: CreateTargetRequest):
         return target
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+from backend.app.storage.chat_db import chat_db
+
+
+@router.delete("/{target_id}")
+def delete_target(target_id: str):
+    success = registry.delete(target_id)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Target '{target_id}' not found.")
+    chat_db.delete_target_conversations(target_id)
+    return {"status": "deleted", "target_id": target_id}
+

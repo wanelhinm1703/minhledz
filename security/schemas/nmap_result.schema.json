@@ -3,66 +3,127 @@
   "title": "NmapResult",
   "description": "Schema for structured Nmap scan output",
   "type": "object",
-  "required": ["scan_metadata", "hosts"],
+  "required": [
+    "scan_metadata",
+    "hosts"
+  ],
   "properties": {
     "scan_metadata": {
       "type": "object",
-      "required": ["tool", "target", "command", "timestamp", "exit_code"],
+      "required": [
+        "tool",
+        "target",
+        "command",
+        "timestamp",
+        "exit_code"
+      ],
       "properties": {
-        "tool": { "type": "string" },
-        "target": { "type": "string" },
-        "command": { "type": "string" },
-        "arguments": { "type": "string" },
-        "timestamp": { "type": "string" },
-        "duration_seconds": { "type": "number" },
-        "exit_code": { "type": "integer" }
+        "tool": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "duration_seconds": {
+          "type": "number"
+        },
+        "exit_code": {
+          "type": "integer"
+        }
       }
     },
     "hosts": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["status", "addresses", "ports"],
+        "required": [
+          "status",
+          "addresses",
+          "ports"
+        ],
         "properties": {
           "status": {
             "type": "object",
             "properties": {
-              "state": { "type": "string" },
-              "reason": { "type": "string" }
+              "state": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              }
             }
           },
           "addresses": {
             "type": "object",
             "properties": {
-              "ipv4": { "type": "string" },
-              "ipv6": { "type": "string" },
-              "mac": { "type": "string" }
+              "ipv4": {
+                "type": "string"
+              },
+              "ipv6": {
+                "type": "string"
+              },
+              "mac": {
+                "type": "string"
+              }
             }
           },
           "hostnames": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
           "ports": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["portid", "protocol", "state"],
+              "required": [
+                "portid",
+                "protocol",
+                "state"
+              ],
               "properties": {
-                "portid": { "type": "integer" },
-                "protocol": { "type": "string" },
-                "state": { "type": "string" },
-                "reason": { "type": "string" },
+                "portid": {
+                  "type": "integer"
+                },
+                "protocol": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
                 "service": {
                   "type": "object",
                   "properties": {
-                    "name": { "type": "string" },
-                    "product": { "type": "string" },
-                    "version": { "type": "string" },
-                    "extrainfo": { "type": "string" },
+                    "name": {
+                      "type": "string"
+                    },
+                    "product": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    },
+                    "extrainfo": {
+                      "type": "string"
+                    },
                     "cpe": {
                       "type": "array",
-                      "items": { "type": "string" }
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   }
                 },
@@ -71,8 +132,12 @@
                   "items": {
                     "type": "object",
                     "properties": {
-                      "id": { "type": "string" },
-                      "output": { "type": "string" }
+                      "id": {
+                        "type": "string"
+                      },
+                      "output": {
+                        "type": "string"
+                      }
                     }
                   }
                 }

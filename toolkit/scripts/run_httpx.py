@@ -11,6 +11,10 @@ import subprocess
 import sys
 import time
 
+REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from toolkit.scripts.run_nmap import append_command_log
 
 
@@ -81,7 +85,7 @@ def run_httpx_scan(
     if httpx_bin and not force_sim:
         try:
             cmd = [
-                "httpx", "-u", target_url,
+                httpx_bin, "-u", target_url,
                 "-status-code", "-title", "-tech-detect", "-web-server",
                 "-json", "-o", str(raw_jsonl_path),
             ]
@@ -93,6 +97,43 @@ def run_httpx_scan(
             exit_code = 1
             error_msg = str(e)
             raw_jsonl_path.write_text(generate_mock_httpx_jsonl(target_url, target_host, port), encoding="utf-8")
+    elif not force_sim:
+        # Perform real HTTP probing using python httpx client
+        real_records = []
+        schemes_and_ports = [("http", port or 80), ("https", port or 443)]
+        if port:
+            schemes_and_ports = [("http", port), ("https", port)]
+        
+        for scheme, p in schemes_and_ports:
+            try:
+                import httpx as python_httpx
+                probe_url = f"{scheme}://{target_host}:{p}"
+                resp = python_httpx.get(probe_url, timeout=3.0, verify=False)
+                title_match = re.search(r"<title>(.*?)</title>", resp.text, re.IGNORECASE | re.DOTALL)
+                title = title_match.group(1).strip() if title_match else ""
+                server = resp.headers.get("server", "")
+                real_records.append({
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "url": probe_url,
+                    "input": target_host,
+                    "host": target_host,
+                    "port": p,
+                    "scheme": scheme,
+                    "status_code": resp.status_code,
+                    "title": title,
+                    "webserver": server,
+                    "content_type": resp.headers.get("content-type", ""),
+                    "content_length": len(resp.content),
+                    "technologies": [server] if server else [],
+                    "response_headers": dict(resp.headers),
+                })
+            except Exception:
+                pass
+        
+        if real_records:
+            raw_jsonl_path.write_text("\n".join(json.dumps(r) for r in real_records) + "\n", encoding="utf-8")
+        else:
+            raw_jsonl_path.write_text("", encoding="utf-8")
     else:
         raw_jsonl_path.write_text(generate_mock_httpx_jsonl(target_url, target_host, port), encoding="utf-8")
 

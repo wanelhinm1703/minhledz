@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FfufResult",
+  "description": "Schema for structured FFUF content/endpoint discovery results",
+  "type": "object",
+  "required": [
+    "scan_metadata",
+    "results"
+  ],
+  "properties": {
+    "scan_metadata": {
+      "type": "object",
+      "required": [
+        "tool",
+        "target",
+        "command",
+        "timestamp",
+        "exit_code"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "duration_seconds": {
+          "type": "number"
+        },
+        "exit_code": {
+          "type": "integer"
+        }
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "input",
+          "status",
+          "length"
+        ],
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "position": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "length": {
+            "type": "integer"
+          },
+          "words": {
+            "type": "integer"
+          },
+          "lines": {
+            "type": "integer"
+          },
+          "url": {
+            "type": "string"
+          },
+          "redirectlocation": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

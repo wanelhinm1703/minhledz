@@ -117,10 +117,27 @@ def append_command_log(
         f.write(entry)
 
 
+def find_nmap_binary() -> str | None:
+    bin_path = shutil.which("nmap")
+    if bin_path:
+        return bin_path
+    windows_paths = [
+        r"C:\Program Files (x86)\Nmap\nmap.exe",
+        r"C:\Program Files\Nmap\nmap.exe",
+        r"C:\ProgramData\chocolatey\bin\nmap.exe",
+        r"C:\tools\nmap\nmap.exe",
+    ]
+    for p in windows_paths:
+        if os.path.exists(p):
+            return p
+    return None
+
+
 def run_nmap_scan(
     target_id: str,
     target_host: str,
     port: int | None = None,
+    scripts: str | None = None,
     output_dir: pathlib.Path | None = None,
     simulate: bool = False,
 ) -> dict:
@@ -140,10 +157,11 @@ def run_nmap_scan(
     commands_log = scan_dir / "commands.md"
 
     port_arg = f"-p {port}" if port else "-F"
-    nmap_args = f"-sV -sC -Pn -T4 {port_arg} {target_host} -oX {raw_xml_path} -oN {normal_txt_path}"
+    script_arg = f" --script={scripts}" if scripts else ""
+    nmap_args = f"-sV -Pn -T4 {port_arg}{script_arg} {target_host} -oX {raw_xml_path} -oN {normal_txt_path}"
     command_str = f"nmap {nmap_args}"
 
-    nmap_binary = shutil.which("nmap")
+    nmap_binary = find_nmap_binary()
     force_sim = simulate or (os.getenv("SIMULATE_SCANS", "false").lower() == "true")
 
     start_time = time.time()
@@ -152,11 +170,13 @@ def run_nmap_scan(
 
     if nmap_binary and not force_sim:
         try:
-            cmd = ["nmap", "-sV", "-sC", "-Pn", "-T4"]
+            cmd = [nmap_binary, "-sV", "-Pn", "-T4"]
             if port:
                 cmd.extend(["-p", str(port)])
             else:
                 cmd.append("-F")
+            if scripts:
+                cmd.append(f"--script={scripts}")
             cmd.extend([target_host, "-oX", str(raw_xml_path), "-oN", str(normal_txt_path)])
             
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)

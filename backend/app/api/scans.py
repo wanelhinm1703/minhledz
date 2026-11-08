@@ -3,8 +3,11 @@ from __future__ import annotations
 import json
 import os
 import pathlib
-from typing import List
+import shutil
+from typing import List, Dict, Any
 from fastapi import APIRouter, HTTPException, Query
+
+from backend.app.services.tool_registry import tool_registry
 
 router = APIRouter(prefix="/scans", tags=["scans"])
 
@@ -12,14 +15,31 @@ root_dir = pathlib.Path(__file__).resolve().parent.parent.parent.parent
 scans_net_dir = root_dir / "toolkit" / "03-network" / "scans"
 scans_web_dir = root_dir / "toolkit" / "04-web" / "scans"
 scans_vuln_dir = root_dir / "toolkit" / "05-vulnerability" / "scans"
+scans_enum_dir = root_dir / "toolkit" / "06-service-enum" / "scans"
+scans_manual_dir = root_dir / "toolkit" / "08-manual" / "scans"
+
+ALL_SCAN_DIRS = [
+    ("03-network", scans_net_dir),
+    ("04-web", scans_web_dir),
+    ("05-vulnerability", scans_vuln_dir),
+    ("06-service-enum", scans_enum_dir),
+    ("08-manual", scans_manual_dir),
+]
+
+
+@router.get("/tools")
+def get_tools_availability():
+    """Return live availability and version status for all tools in the pentest toolset."""
+    return tool_registry.get_all_availability()
 
 
 @router.get("")
 def list_scans():
+    """Dynamically discover all scan artifacts across all original tool categories."""
     results = []
-    # Collect all targets with scan artifacts
     targets_seen = set()
-    for base in [scans_net_dir, scans_web_dir, scans_vuln_dir]:
+
+    for _, base in ALL_SCAN_DIRS:
         if base.exists():
             for t_dir in base.iterdir():
                 if t_dir.is_dir():
@@ -29,43 +49,71 @@ def list_scans():
         tools = []
         files = []
 
-        # Nmap
-        nmap_dir = scans_net_dir / tid / "nmap"
-        if nmap_dir.exists():
-            tools.append("nmap")
-            if (nmap_dir / "structured" / "nmap_result.json").exists():
-                files.append({"name": "nmap_result.json", "tool": "nmap", "type": "structured", "rel_path": f"03-network/scans/{tid}/nmap/structured/nmap_result.json"})
-            if (nmap_dir / "raw" / "nmap_raw.xml").exists():
-                files.append({"name": "nmap_raw.xml", "tool": "nmap", "type": "raw", "rel_path": f"03-network/scans/{tid}/nmap/raw/nmap_raw.xml"})
-            if (nmap_dir / "commands.md").exists():
-                files.append({"name": "commands.md", "tool": "nmap", "type": "log", "rel_path": f"03-network/scans/{tid}/nmap/commands.md"})
+        for category_name, base_dir in ALL_SCAN_DIRS:
+            target_tool_root = base_dir / tid
+            if not target_tool_root.exists() or not target_tool_root.is_dir():
+                continue
 
-        # Naabu
-        naabu_dir = scans_net_dir / tid / "naabu"
-        if naabu_dir.exists():
-            tools.append("naabu")
-            if (naabu_dir / "raw" / "naabu_raw.txt").exists():
-                files.append({"name": "naabu_raw.txt", "tool": "naabu", "type": "raw", "rel_path": f"03-network/scans/{tid}/naabu/raw/naabu_raw.txt"})
+            for tool_dir in target_tool_root.iterdir():
+                if not tool_dir.is_dir():
+                    continue
 
-        # Httpx
-        httpx_dir = scans_web_dir / tid / "httpx"
-        if httpx_dir.exists():
-            tools.append("httpx")
-            if (httpx_dir / "structured" / "httpx_result.json").exists():
-                files.append({"name": "httpx_result.json", "tool": "httpx", "type": "structured", "rel_path": f"04-web/scans/{tid}/httpx/structured/httpx_result.json"})
-            if (httpx_dir / "raw" / "httpx_raw.jsonl").exists():
-                files.append({"name": "httpx_raw.jsonl", "tool": "httpx", "type": "raw", "rel_path": f"04-web/scans/{tid}/httpx/raw/httpx_raw.jsonl"})
+                tool_name = tool_dir.name
+                tools.append(tool_name)
 
-        # Nuclei
-        nuclei_dir = scans_vuln_dir / tid / "nuclei"
-        if nuclei_dir.exists():
-            tools.append("nuclei")
-            if (nuclei_dir / "structured" / "nuclei_result.json").exists():
-                files.append({"name": "nuclei_result.json", "tool": "nuclei", "type": "structured", "rel_path": f"05-vulnerability/scans/{tid}/nuclei/structured/nuclei_result.json"})
+                # 1. Structured files
+                struct_dir = tool_dir / "structured"
+                if struct_dir.exists():
+                    for f in struct_dir.iterdir():
+                        if f.is_file() and f.suffix.lower() == ".json":
+                            rel_p = f"{category_name}/scans/{tid}/{tool_name}/structured/{f.name}"
+                            files.append({
+                                "name": f.name,
+                                "tool": tool_name,
+                                "type": "structured",
+                                "rel_path": rel_p,
+                            })
+
+                # 2. Raw files
+                raw_dir = tool_dir / "raw"
+                if raw_dir.exists():
+                    for f in raw_dir.iterdir():
+                        if f.is_file():
+                            rel_p = f"{category_name}/scans/{tid}/{tool_name}/raw/{f.name}"
+                            files.append({
+                                "name": f.name,
+                                "tool": tool_name,
+                                "type": "raw",
+                                "rel_path": rel_p,
+                            })
+
+                # 3. Normal / stdout files
+                norm_dir = tool_dir / "normal"
+                if norm_dir.exists():
+                    for f in norm_dir.iterdir():
+                        if f.is_file():
+                            rel_p = f"{category_name}/scans/{tid}/{tool_name}/normal/{f.name}"
+                            files.append({
+                                "name": f.name,
+                                "tool": tool_name,
+                                "type": "normal",
+                                "rel_path": rel_p,
+                            })
+
+                # 4. Command audit log
+                cmd_file = tool_dir / "commands.md"
+                if cmd_file.exists():
+                    rel_p = f"{category_name}/scans/{tid}/{tool_name}/commands.md"
+                    files.append({
+                        "name": "commands.md",
+                        "tool": tool_name,
+                        "type": "log",
+                        "rel_path": rel_p,
+                    })
 
         results.append({
             "target_id": tid,
-            "tools": list(set(tools)),
+            "tools": sorted(list(set(tools))),
             "evidence_files": files,
         })
 
@@ -93,4 +141,40 @@ def get_evidence_file(path: str = Query(..., description="Relative path within t
         "filename": full_path.name,
         "is_json": is_json,
         "content": content,
+    }
+
+
+@router.delete("/{target_id}")
+def delete_target_scans(target_id: str):
+    """Delete all scan evidence artifacts for a specific target across all scan directories."""
+    keys_to_clean = {target_id}
+    if target_id.startswith("target-"):
+        keys_to_clean.add(target_id[7:])
+    else:
+        keys_to_clean.add(f"target-{target_id}")
+
+    deleted_count = 0
+    for key in keys_to_clean:
+        # Check network, web, vuln, service-enum, manual scan directories
+        for _, base in ALL_SCAN_DIRS:
+            target_dir = base / key
+            if target_dir.exists() and target_dir.is_dir():
+                shutil.rmtree(target_dir, ignore_errors=True)
+                deleted_count += 1
+
+        # Check analysis artifacts
+        manifest_file = root_dir / "toolkit" / "09-analysis" / "manifests" / f"{key}_manifest.json"
+        if manifest_file.exists():
+            manifest_file.unlink(missing_ok=True)
+            deleted_count += 1
+
+        findings_file = root_dir / "toolkit" / "09-analysis" / "findings" / f"{key}_findings.json"
+        if findings_file.exists():
+            findings_file.unlink(missing_ok=True)
+            deleted_count += 1
+
+    return {
+        "status": "deleted",
+        "target_id": target_id,
+        "artifacts_cleaned": deleted_count,
     }

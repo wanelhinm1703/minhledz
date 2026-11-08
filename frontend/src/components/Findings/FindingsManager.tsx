@@ -341,11 +341,10 @@ export const FindingsManager: React.FC = () => {
               <div
                 key={f.id}
                 onClick={() => setSelectedFinding(f)}
-                className={`p-2.5 rounded border transition cursor-pointer flex flex-col space-y-1.5 ${
-                  selectedFinding?.id === f.id
+                className={`p-2.5 rounded border transition cursor-pointer flex flex-col space-y-1.5 ${selectedFinding?.id === f.id
                     ? 'bg-zinc-900 border-cyan-600/80 shadow-sm'
                     : 'bg-[#18181c] border-zinc-800 hover:border-zinc-700'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">

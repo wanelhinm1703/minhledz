@@ -26,33 +26,30 @@ export const Header: React.FC = () => {
         <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded p-0.5 text-xs">
           <button
             onClick={() => setActiveView('editor')}
-            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded transition ${
-              activeView === 'editor'
+            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded transition ${activeView === 'editor'
                 ? 'bg-zinc-800 text-cyan-400 font-semibold'
                 : 'text-zinc-400 hover:text-zinc-200'
-            }`}
+              }`}
           >
             <FileCode className="w-3.5 h-3.5" />
             <span>Files & Editor</span>
           </button>
           <button
             onClick={() => setActiveView('findings')}
-            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded transition ${
-              activeView === 'findings'
+            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded transition ${activeView === 'findings'
                 ? 'bg-zinc-800 text-cyan-400 font-semibold'
                 : 'text-zinc-400 hover:text-zinc-200'
-            }`}
+              }`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
             <span>Findings Manager</span>
           </button>
           <button
             onClick={() => setActiveView('reports')}
-            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded transition ${
-              activeView === 'reports'
+            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded transition ${activeView === 'reports'
                 ? 'bg-zinc-800 text-cyan-400 font-semibold'
                 : 'text-zinc-400 hover:text-zinc-200'
-            }`}
+              }`}
           >
             <FileText className="w-3.5 h-3.5" />
             <span>Pentest Report</span>

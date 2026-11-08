@@ -100,22 +100,20 @@ export const ReportViewer: React.FC = () => {
             <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded p-0.5 text-xs">
               <button
                 onClick={() => setViewFormat('markdown')}
-                className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] transition ${
-                  viewFormat === 'markdown'
+                className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] transition ${viewFormat === 'markdown'
                     ? 'bg-zinc-800 text-cyan-400 font-semibold'
                     : 'text-zinc-400 hover:text-zinc-200'
-                }`}
+                  }`}
               >
                 <Code className="w-3 h-3" />
                 <span>Markdown</span>
               </button>
               <button
                 onClick={() => setViewFormat('html')}
-                className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] transition ${
-                  viewFormat === 'html'
+                className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] transition ${viewFormat === 'html'
                     ? 'bg-zinc-800 text-cyan-400 font-semibold'
                     : 'text-zinc-400 hover:text-zinc-200'
-                }`}
+                  }`}
               >
                 <Layout className="w-3 h-3" />
                 <span>Styled HTML</span>

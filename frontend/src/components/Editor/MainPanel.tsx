@@ -36,11 +36,10 @@ export const MainPanel: React.FC = () => {
           <div
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center space-x-2 px-3 py-2 border-r border-[#27272a] text-xs cursor-pointer transition ${
-              tab.id === activeTabId
+            className={`flex items-center space-x-2 px-3 py-2 border-r border-[#27272a] text-xs cursor-pointer transition ${tab.id === activeTabId
                 ? 'bg-[#18181b] text-cyan-300 border-t-2 border-t-cyan-500 font-medium'
                 : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200'
-            }`}
+              }`}
           >
             <span className="truncate max-w-[140px]">{tab.title}</span>
             <button

@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RustscanResult",
+  "description": "Schema for structured RustScan port discovery results",
+  "type": "object",
+  "required": [
+    "scan_metadata",
+    "target",
+    "open_ports"
+  ],
+  "properties": {
+    "scan_metadata": {
+      "type": "object",
+      "required": [
+        "tool",
+        "target",
+        "command",
+        "timestamp",
+        "exit_code"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "arguments": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "duration_seconds": {
+          "type": "number"
+        },
+        "exit_code": {
+          "type": "integer"
+        }
+      }
+    },
+    "target": {
+      "type": "string"
+    },
+    "open_ports": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    },
+    "nmap_command": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

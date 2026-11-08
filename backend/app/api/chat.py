@@ -16,24 +16,27 @@ router = APIRouter(tags=["chat"])
 
 class CreateConversationRequest(BaseModel):
     title: Optional[str] = "New Pentest Session"
+    target_id: Optional[str] = None
 
 
 class SendMessageRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
+    target_id: Optional[str] = None
     active_target: Optional[str] = None
     active_file: Optional[str] = None
+    active_file_content: Optional[str] = None
 
 
 @router.get("/conversations")
-def get_conversations():
-    return {"conversations": chat_db.list_conversations()}
+def get_conversations(target_id: Optional[str] = None):
+    return {"conversations": chat_db.list_conversations(target_id=target_id)}
 
 
 @router.post("/conversations")
 def create_conversation(req: CreateConversationRequest):
     cid = str(uuid.uuid4())
-    conv = chat_db.create_conversation(cid, title=req.title or "New Pentest Session")
+    conv = chat_db.create_conversation(cid, title=req.title or "New Pentest Session", target_id=req.target_id)
     return conv
 
 
@@ -54,9 +57,17 @@ def delete_conversation(conversation_id: str):
 @router.post("/message")
 async def send_message_sync(req: SendMessageRequest):
     """Synchronous fallback endpoint for chat interactions."""
-    cid = req.conversation_id or str(uuid.uuid4())
-    if not req.conversation_id:
-        chat_db.create_conversation(cid, title=req.message[:40])
+    cid = req.conversation_id
+    if not cid:
+        if req.target_id:
+            cid = f"target_{req.target_id}"
+        else:
+            cid = str(uuid.uuid4())
+        chat_db.create_conversation(
+            cid,
+            title=f"Target: {req.active_target}" if req.active_target else req.message[:40],
+            target_id=req.target_id,
+        )
 
     chat_db.add_message(
         conversation_id=cid,
@@ -64,6 +75,7 @@ async def send_message_sync(req: SendMessageRequest):
         content=req.message,
         active_target=req.active_target,
         active_file=req.active_file,
+        target_id=req.target_id,
     )
 
     # Check guardrails
@@ -83,6 +95,7 @@ async def send_message_sync(req: SendMessageRequest):
         message=req.message,
         active_target=req.active_target,
         active_file=req.active_file,
+        active_file_content=req.active_file_content,
         conversation_id=cid,
     )
 

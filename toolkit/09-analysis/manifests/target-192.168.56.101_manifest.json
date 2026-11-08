@@ -3,7 +3,7 @@
   "target_input": "192.168.56.101",
   "normalized_value": "192.168.56.101",
   "campaign_id": "lab-local",
-  "timestamp": "2026-09-14T15:29:32.566032+00:00",
+  "timestamp": "2026-09-15T06:52:17.174726+00:00",
   "capabilities": [
     "network",
     "port_discovery",
@@ -13,6 +13,7 @@
     "naabu",
     "nmap"
   ],
+  "tool_status": {},
   "evidence_files": {
     "naabu": {
       "raw": "C:\\Users\\DUC_THUAN\\.gemini\\antigravity\\scratch\\ai-pentest-copilot\\toolkit\\03-network\\scans\\target-192.168.56.101\\naabu\\raw\\naabu_raw.txt",
